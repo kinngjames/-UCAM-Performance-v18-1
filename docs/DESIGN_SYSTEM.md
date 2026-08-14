@@ -60,7 +60,7 @@ Cards solo para acción, alerta o resumen que necesita contención. Información
 Pocos, pequeños y semánticos:
 
 - Disponibilidad: COMPLETO, MODIFICADO, RECUPERACIÓN, NO DISPONIBLE, AUSENTE.
-- Monitorización: OK, VIGILAR, REVISAR, INCOMPLETO, SIN DATOS.
+- Monitorización: OK, VIGILAR y REVISAR. La ausencia de estado deportivo se representa como `—` neutro, sin badge ni icono de aprobación.
 - Alertas: NUEVA, REVISADA, EN SEGUIMIENTO, CERRADA.
 
 ## Tablas y listas

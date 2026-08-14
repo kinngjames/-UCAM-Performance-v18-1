@@ -1,4 +1,8 @@
-import type { Availability, LoadCompleteness } from "./types";
+import type {
+  Availability,
+  LoadCompleteness,
+  RecordCompleteness,
+} from "./types";
 
 export function completeEffortProduct(rpe: number, minutes: number): number;
 export function completeEffortProduct(
@@ -122,6 +126,26 @@ export const registrationPending = ({
 }) =>
   Math.max(0, rpeExpected - rpeCompleted) +
   (wellbeingExpected === 1 && !wellbeingDone ? 1 : 0);
+
+export const classifyRecordCompleteness = ({
+  rpeCompleted,
+  rpeExpected,
+  wellbeingDone,
+  wellbeingExpected,
+}: {
+  rpeCompleted: number;
+  rpeExpected: number;
+  wellbeingDone: boolean;
+  wellbeingExpected: 0 | 1;
+}): RecordCompleteness => {
+  const expected = rpeExpected + wellbeingExpected;
+  const completed =
+    rpeCompleted + Number(wellbeingExpected === 1 && wellbeingDone);
+  if (expected === 0) return "NOT_EXPECTED";
+  if (completed === expected) return "COMPLETE";
+  if (completed > 0) return "PARTIAL";
+  return "NO_DATA";
+};
 
 export const monotonyAndStrain = (dailyLoads: number[]) => {
   const average = meanValue(dailyLoads) ?? 0;

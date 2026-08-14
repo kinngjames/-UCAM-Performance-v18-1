@@ -1,6 +1,7 @@
 import { BASELINE_MINIMUM, BASELINE_WINDOW } from "./constants";
 import {
   classifyLoadCompleteness,
+  classifyRecordCompleteness,
   loadForCompleteEffort,
   meanValue as mean,
   monotonyAndStrain,
@@ -226,6 +227,12 @@ export function buildMetrics({
         wellbeingDone,
         wellbeingExpected,
       });
+      const recordCompleteness = classifyRecordCompleteness({
+        rpeCompleted,
+        rpeExpected,
+        wellbeingDone,
+        wellbeingExpected,
+      });
       const { reasons, signals, status } = deriveMetricSignals({
         weekly,
         personalSleep,
@@ -234,12 +241,7 @@ export function buildMetrics({
         zRpe,
         avgRpe,
         personalRpe,
-        pending,
-        rpeCompleted,
-        rpeExpected,
-        wellbeingDone,
-        wellbeingExpected,
-        trained: trained.length,
+        recordCompleteness,
       });
       const metric: PlayerMetric = {
         weekId: week.id,
@@ -272,6 +274,7 @@ export function buildMetrics({
         wellbeingExpected,
         wellbeingDone,
         pending,
+        recordCompleteness,
         chronic: round(chronic, 0),
         ewma: round(ewma, 0),
         ratio: round(ratio, 2),

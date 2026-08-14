@@ -38,7 +38,7 @@ const expectedPending = (metric, wellbeingExpected) =>
   Math.max(0, metric.rpeExpected - metric.rpeCompleted) +
   (wellbeingExpected === 1 && !metric.wellbeingDone ? 1 : 0);
 
-const c1ExpectedMetric = (historical, hasWellbeingRecord) => {
+export const buildC1ExpectedMetric = (historical, hasWellbeingRecord) => {
   const expected = structuredClone(historical);
   delete expected.compliance;
   delete expected.streak;
@@ -74,7 +74,7 @@ const c1ExpectedMetric = (historical, hasWellbeingRecord) => {
   return expected;
 };
 
-const topLevelDifferences = (expected, actual) => {
+export const topLevelDifferences = (expected, actual) => {
   const fields = new Set([...Object.keys(expected), ...Object.keys(actual)]);
   return [...fields].filter((field) => {
     const expectedHasField = Object.hasOwn(expected, field);
@@ -108,7 +108,7 @@ const verifyCollection = (label, historical, actual, wellbeingRows) => {
         immutableDifferences += 1;
       }
     }
-    const expected = c1ExpectedMetric(oldMetric, wellbeingKeys.has(key));
+    const expected = buildC1ExpectedMetric(oldMetric, wellbeingKeys.has(key));
     const unexpected = topLevelDifferences(expected, currentMetric);
     assert.deepEqual(unexpected, [], `${label}: diferencias no autorizadas en ${key}`);
     assert.equal(
@@ -143,7 +143,7 @@ const verifyCollection = (label, historical, actual, wellbeingRows) => {
   };
 };
 
-const administrativeCompleteness = (metric) => {
+export const administrativeCompleteness = (metric) => {
   const expected = metric.rpeExpected + metric.wellbeingExpected;
   const completed =
     metric.rpeCompleted +
@@ -153,6 +153,44 @@ const administrativeCompleteness = (metric) => {
   if (completed > 0) return "PARTIAL";
   return "NO_DATA";
 };
+
+export const buildC1ExpectedCollection = (historical, wellbeingRows) => {
+  const wellbeingKeys = new Set(
+    wellbeingRows.map((row) => `${row.weekId}-${row.playerId}`),
+  );
+  return historical.map((metric) =>
+    buildC1ExpectedMetric(metric, wellbeingKeys.has(metricKey(metric))),
+  );
+};
+
+export async function characterizeBlock2C1Contract() {
+  const historicalGolden = await readVerifiedV18GoldenV2();
+  const currentDemo = await buildV18Baseline();
+  assert.equal(currentDemo.datasetSha256, V18_DATASET_SHA256);
+  const historicalFixture = await readVerifiedV18AdversarialFixture();
+  const expectedDemo = buildC1ExpectedCollection(
+    historicalGolden.metrics,
+    currentDemo.inputs.wellbeing,
+  );
+  const expectedFixture = buildC1ExpectedCollection(
+    historicalFixture.output,
+    historicalFixture.input.wellbeing,
+  );
+  return {
+    demo: verifyCollection(
+      "Contrato DEMO C1",
+      historicalGolden.metrics,
+      expectedDemo,
+      currentDemo.inputs.wellbeing,
+    ),
+    fixture: verifyCollection(
+      "Contrato fixture C1",
+      historicalFixture.output,
+      expectedFixture,
+      historicalFixture.input.wellbeing,
+    ),
+  };
+}
 
 export async function verifyBlock2C1Contract() {
   const historicalGolden = await readVerifiedV18GoldenV2();

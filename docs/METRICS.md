@@ -230,6 +230,17 @@ pendientes = max(0, RPE_esperados − RPE_realizados)
 - La interfaz identifica ese caso como “Bienestar opcional esta semana” y conserva sueño, ánimo, cansancio, dolor y estrés para monitorización.
 - No existe racha ni índice sustituto derivado de estos registros.
 
+La completitud administrativa se expone en un eje propio:
+
+| `recordCompleteness` | Contrato |
+| --- | --- |
+| `COMPLETE` | Todas las oportunidades esperadas están completadas. |
+| `PARTIAL` | Hay al menos una oportunidad completada y otra esperada pendiente. |
+| `NO_DATA` | Hay oportunidades esperadas y ninguna está completada. |
+| `NOT_EXPECTED` | No había ninguna oportunidad administrativa esperada. |
+
+Un bienestar voluntario con `bienestar_esperado = 0` no altera `pending` ni convierte `NOT_EXPECTED` en completo. Sus cinco variables válidas sí permanecen disponibles para monitorización.
+
 ## Tendencias
 
 - Requieren al menos 5 valores válidos.
@@ -240,15 +251,16 @@ pendientes = max(0, RPE_esperados − RPE_realizados)
 
 ## Monitorización
 
-Prioridad actual:
+`status` representa exclusivamente monitorización deportiva:
 
-1. `REVISAR`: existe una señal de revisión.
-2. `INCOMPLETO`: falta un registro esperado.
-3. `VIGILAR`: existe señal de vigilancia.
-4. `SIN DATOS`: no hay entrenamiento ni bienestar interpretable.
-5. `OK`: datos suficientes sin señales activas.
+1. `REVISAR`: existe una señal deportiva con severidad `review`.
+2. `VIGILAR`: no existe revisión y sí una señal deportiva `watch`.
+3. `null`: no existe señal deportiva y `recordCompleteness = NOT_EXPECTED`.
+4. `OK`: resto de semanas sin señal deportiva.
 
-Disponibilidad y monitorización son ejes independientes: un jugador puede estar `COMPLETO` y `VIGILAR`.
+Una señal deportiva siempre tiene prioridad sobre `NOT_EXPECTED`. Por tanto, un bienestar voluntario válido puede producir `VIGILAR` o `REVISAR` sin aumentar `pending`. `null` se presenta como `—`, nunca como `OK`, badge verde o aprobación implícita.
+
+Disponibilidad, completitud administrativa y monitorización son ejes independientes. `pending` no participa en `status`.
 
 ## Alertas y revisiones
 
@@ -258,7 +270,7 @@ Flujo conceptual:
 DATO → SEÑAL → ALERTA → REVISIÓN → CIERRE
 ```
 
-Una alerta conserva jugador, fecha, tipo, valor, referencia, motivo y estado (`NUEVA`, `REVISADA`, `EN SEGUIMIENTO`, `CERRADA`). Debe explicar por qué existe. Una señal no equivale a diagnóstico.
+Una alerta conserva jugador, fecha, tipo, valor, referencia, motivo y estado (`NUEVA`, `REVISADA`, `EN SEGUIMIENTO`, `CERRADA`). Debe explicar por qué existe. Las señales y razones derivadas son exclusivamente deportivas; los registros pendientes viven en el eje administrativo. Una señal no equivale a diagnóstico.
 
 ## Presentación
 

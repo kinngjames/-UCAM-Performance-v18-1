@@ -1,5 +1,6 @@
 import { formatSignalNumber } from "./format";
 import type {
+  RecordCompleteness,
   Signal,
   Status,
   Thresholds,
@@ -14,12 +15,7 @@ type MetricSignalInput = {
   zRpe: number | null;
   avgRpe: number | null;
   personalRpe: number | null;
-  pending: number;
-  rpeCompleted: number;
-  rpeExpected: number;
-  wellbeingDone: boolean;
-  wellbeingExpected: 0 | 1;
-  trained: number;
+  recordCompleteness: RecordCompleteness;
 };
 
 const formatSignalValue = (
@@ -35,12 +31,7 @@ export const deriveMetricSignals = ({
   zRpe,
   avgRpe,
   personalRpe,
-  pending,
-  rpeCompleted,
-  rpeExpected,
-  wellbeingDone,
-  wellbeingExpected,
-  trained,
+  recordCompleteness,
 }: MetricSignalInput) => {
   const signals: Signal[] = [];
   if (
@@ -107,31 +98,15 @@ export const deriveMetricSignals = ({
       action: "Contextualizar con el contenido y la duración de las sesiones.",
       severity: "watch",
     });
-  if (pending > 0)
-    signals.push({
-      key: "pending",
-      label: "Registro incompleto",
-      data: `${rpeCompleted}/${rpeExpected} RPE`,
-      reference:
-        wellbeingExpected === 0
-          ? "Bienestar opcional"
-          : `Bienestar ${wellbeingDone ? "completo" : "pendiente"}`,
-      difference: `${pending} pendiente${pending > 1 ? "s" : ""}`,
-      explanation: "Solo se cuentan los RPE de las sesiones en las que entrenó.",
-      action: "Solicitar los registros que faltan.",
-      severity: "info",
-    });
   const review = signals.some((item) => item.severity === "review");
   const watch = signals.some((item) => item.severity === "watch");
   const status: Status = review
     ? "REVISAR"
-    : pending > 0
-      ? "INCOMPLETO"
-      : watch
-        ? "VIGILAR"
-        : !trained && !weekly
-          ? "SIN DATOS"
-          : "OK";
+    : watch
+      ? "VIGILAR"
+      : recordCompleteness === "NOT_EXPECTED"
+        ? null
+        : "OK";
   return {
     reasons: signals.map((item) => item.label),
     signals,

@@ -133,9 +133,8 @@ test("EWMA conserva exactamente la fórmula v18", async () => {
   assert.equal(nextEwma(200, 100, 0.4), 140);
 });
 
-test("C1 separa la expectativa de bienestar y calcula solo pendientes esperados", async () => {
+test("C1 mantiene pending como recuento administrativo", async () => {
   const {
-    deriveMetricSignals,
     registrationPending,
     wellbeingExpectedForAvailability,
   } = await metricsPromise;
@@ -171,23 +170,136 @@ test("C1 separa la expectativa de bienestar y calcula solo pendientes esperados"
     }),
     1,
   );
-  const optionalWellbeing = deriveMetricSignals({
-    avgRpe: null,
-    pending: 1,
-    personalRpe: null,
+});
+
+test("C6 clasifica la completitud administrativa sin contaminar monitorización", async () => {
+  const { classifyRecordCompleteness } = await metricsPromise;
+  assert.equal(
+    classifyRecordCompleteness({
+      rpeCompleted: 2,
+      rpeExpected: 2,
+      wellbeingDone: true,
+      wellbeingExpected: 1,
+    }),
+    "COMPLETE",
+  );
+  assert.equal(
+    classifyRecordCompleteness({
+      rpeCompleted: 1,
+      rpeExpected: 2,
+      wellbeingDone: true,
+      wellbeingExpected: 1,
+    }),
+    "PARTIAL",
+  );
+  assert.equal(
+    classifyRecordCompleteness({
+      rpeCompleted: 0,
+      rpeExpected: 1,
+      wellbeingDone: false,
+      wellbeingExpected: 1,
+    }),
+    "NO_DATA",
+  );
+  assert.equal(
+    classifyRecordCompleteness({
+      rpeCompleted: 0,
+      rpeExpected: 0,
+      wellbeingDone: true,
+      wellbeingExpected: 0,
+    }),
+    "NOT_EXPECTED",
+  );
+});
+
+test("C6 mantiene VIGILAR cuando existe señal deportiva y pending es mayor que cero", async () => {
+  const {
+    classifyRecordCompleteness,
+    deriveMetricSignals,
+    registrationPending,
+  } = await metricsPromise;
+  const pending = registrationPending({
+    rpeCompleted: 1,
+    rpeExpected: 2,
+    wellbeingDone: true,
+    wellbeingExpected: 1,
+  });
+  const recordCompleteness = classifyRecordCompleteness({
+    rpeCompleted: 1,
+    rpeExpected: 2,
+    wellbeingDone: true,
+    wellbeingExpected: 1,
+  });
+  const result = deriveMetricSignals({
+    avgRpe: 6.5,
+    personalRpe: 6.1,
     personalSleep: null,
-    rpeCompleted: 0,
-    rpeExpected: 1,
+    recordCompleteness,
     sleepSd: 0,
     thresholds: emptyBuildInput([{ id: 1 }]).thresholds,
-    trained: 1,
-    wellbeingDone: false,
-    wellbeingExpected: 0,
     weekly: undefined,
-    zRpe: null,
+    zRpe: 2.33,
   });
-  assert.equal(optionalWellbeing.signals[0].key, "pending");
-  assert.equal(optionalWellbeing.signals[0].reference, "Bienestar opcional");
+  assert.equal(pending, 1);
+  assert.equal(recordCompleteness, "PARTIAL");
+  assert.deepEqual(result.signals.map((signal) => signal.key), ["rpe-z"]);
+  assert.deepEqual(result.reasons, [
+    "RPE por encima de su comportamiento habitual",
+  ]);
+  assert.equal(result.status, "VIGILAR");
+});
+
+test("C6 permite que dolor voluntario REVISAR gane a NOT_EXPECTED", async () => {
+  const { buildMetrics } = await metricsPromise;
+  const metric = buildMetrics({
+    ...emptyBuildInput([{ id: 1 }]),
+    availability: [
+      {
+        note: "Sin exposición esperada",
+        playerId: "VOLUNTARIO",
+        value: "NO DISPONIBLE",
+        weekId: 1,
+      },
+    ],
+    players: [
+      {
+        accessActive: true,
+        active: true,
+        birthDate: "2000-01-01",
+        dominantFoot: "DERECHA",
+        id: "VOLUNTARIO",
+        name: "REGISTRO VOLUNTARIO",
+        notes: "",
+        number: 1,
+        position: "MEDIO",
+      },
+    ],
+    wellbeing: [
+      {
+        fatigue: 2,
+        mood: 4,
+        notes: "Registro voluntario válido",
+        pain: 5,
+        playerId: "VOLUNTARIO",
+        sleep: 8,
+        stress: 2,
+        weekId: 1,
+      },
+    ],
+  }).get("1-VOLUNTARIO");
+  assert.ok(metric);
+  assert.equal(metric.wellbeingExpected, 0);
+  assert.equal(metric.wellbeingDone, true);
+  assert.deepEqual(
+    [metric.sleep, metric.mood, metric.fatigue, metric.pain, metric.stress],
+    [8, 4, 2, 5, 2],
+  );
+  assert.equal(metric.pending, 0);
+  assert.equal(metric.recordCompleteness, "NOT_EXPECTED");
+  assert.deepEqual(metric.signals.map((signal) => signal.key), ["pain"]);
+  assert.deepEqual(metric.reasons, ["Dolor relevante registrado"]);
+  assert.equal(metric.signals.some((signal) => signal.key === "pending"), false);
+  assert.equal(metric.status, "REVISAR");
 });
 
 test("monotonía y strain comparten la misma carga semanal", async () => {

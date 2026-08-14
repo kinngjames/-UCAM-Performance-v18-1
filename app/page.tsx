@@ -18,15 +18,20 @@ import type {
   AvailabilityRecord,
   Convocation,
   MatchRecord,
+  MonitoringStatus,
   PlayerMetric,
   RosterPlayer,
   SessionPlan,
   SessionRecord,
   Signal,
-  Status,
   Thresholds,
   WellbeingRecord,
 } from "../domain/metrics";
+import {
+  monitoringPriority,
+  STATUS_META,
+  StatusBadge,
+} from "./monitoring-status";
 import { display } from "./ui-format";
 import {
   ACTIVE_SESSION,
@@ -61,7 +66,8 @@ type SessionWorkspaceView =
   | "4"
   | "match"
   | "wellbeing";
-type TeamSignalFilter = "all" | "sleep" | "fatigue" | "pain" | "pending";
+type TeamSignalFilter = "all" | "sleep" | "fatigue" | "pain";
+type TeamRecordFilter = "all" | "pending";
 type MetricKey =
   | "rpe"
   | "load"
@@ -73,13 +79,6 @@ type MetricKey =
 type DetailTab = "summary" | "load" | "wellbeing" | "history" | "report";
 
 
-const STATUS_META: Record<Status, { icon: string; label: string }> = {
-  OK: { icon: "✓", label: "OK" },
-  VIGILAR: { icon: "⚠", label: "Vigilar" },
-  REVISAR: { icon: "!", label: "Revisar" },
-  INCOMPLETO: { icon: "◷", label: "Incompleto" },
-  "SIN DATOS": { icon: "—", label: "Sin datos" },
-};
 const AVAILABILITY_META: Record<Availability, { icon: string; label: string }> =
   {
     COMPLETO: { icon: "✓", label: "Completo" },
@@ -161,6 +160,14 @@ const wellbeingRegistrationText = (metric: PlayerMetric) =>
       ? "Bienestar opcional enviado"
       : "Bienestar opcional esta semana"
     : `Bienestar ${metric.wellbeingDone ? 1 : 0}/1`;
+const recordCompletenessText = (metric: PlayerMetric) =>
+  metric.recordCompleteness === "COMPLETE"
+    ? "Registros completos"
+    : metric.recordCompleteness === "PARTIAL"
+      ? `${metric.pending} registro${metric.pending === 1 ? "" : "s"} pendiente${metric.pending === 1 ? "" : "s"}`
+      : metric.recordCompleteness === "NO_DATA"
+        ? "Sin registros esperados completados"
+        : "Sin registros esperados esta semana";
 const formatDate = (iso: string, long = false) =>
   new Intl.DateTimeFormat(
     "es-ES",
@@ -205,7 +212,6 @@ const planState = (actual: number, planned: number) => {
 function trendInfo(history: PlayerMetric[], key: MetricKey) {
   const valid = history
     .map((item) => {
-      if (item.status === "SIN DATOS") return null;
       if (key === "load" && item.loadCompleteness !== "COMPLETE") return null;
       if (
         ["rpe", "load"].includes(key) &&
@@ -250,17 +256,6 @@ function trendInfo(history: PlayerMetric[], key: MetricKey) {
   };
 }
 
-function StatusBadge({ status }: { status: Status }) {
-  const meta = STATUS_META[status];
-  return (
-    <span
-      className={`status status-${status.toLocaleLowerCase("es-ES").replace(" ", "-")}`}
-    >
-      <span>{meta.icon}</span>
-      {meta.label}
-    </span>
-  );
-}
 function AvailabilityBadge({ value }: { value: Availability }) {
   const meta = AVAILABILITY_META[value];
   return (
@@ -656,7 +651,9 @@ function ReportTrendSummary({
           const meta = METRICS[key];
           const trend = trendInfo(history, key);
           const values = history.slice(-8).map((item) =>
-            item.status === "SIN DATOS" ? null : metricValue(item, key),
+            key === "load" && item.loadCompleteness !== "COMPLETE"
+              ? null
+              : metricValue(item, key),
           );
           const value = values.at(-1) ?? null;
           const reference = key === "load" ? current.chronic : current.personalSleep;
@@ -780,7 +777,7 @@ function MetricExplorer({
     stress: [1, 5],
   };
   const chartValue = (item: PlayerMetric) => {
-    if (item.status === "SIN DATOS") return null;
+    if (metricKey === "load" && item.loadCompleteness === "NO_DATA") return null;
     if (
       ["rpe", "load"].includes(metricKey) &&
       item.rpeExpected > 0 &&
@@ -1069,13 +1066,6 @@ function LegacyTodayDashboard({
   onOpenPlayer: (id: string) => void;
   onOpenAlert: (id: string) => void;
 }) {
-  const priority: Record<Status, number> = {
-    REVISAR: 4,
-    INCOMPLETO: 3,
-    VIGILAR: 2,
-    "SIN DATOS": 1,
-    OK: 0,
-  };
   const session = weekId === ACTIVE_WEEK_ID ? ACTIVE_SESSION : 2;
   const week = CALENDAR[weekId - 1];
   const plan = plans.find(
@@ -1468,13 +1458,6 @@ function TodayDashboard({
   onOpenAlert: (id: string) => void;
   players: RosterPlayer[];
 }) {
-  const priority: Record<Status, number> = {
-    REVISAR: 4,
-    INCOMPLETO: 3,
-    VIGILAR: 2,
-    "SIN DATOS": 1,
-    OK: 0,
-  };
   const sessionNumber = weekId === ACTIVE_WEEK_ID ? ACTIVE_SESSION : 2;
   const week = CALENDAR[weekId - 1];
   const plan = plans.find(
@@ -1510,8 +1493,16 @@ function TodayDashboard({
   ).length;
   const pendingPlayers = current.filter((item) => item.metric.pending > 0);
   const attentionAll = current
-    .filter((item) => ["REVISAR", "VIGILAR"].includes(item.metric.status))
-    .sort((a, b) => priority[b.metric.status] - priority[a.metric.status]);
+    .filter(
+      (item) =>
+        item.metric.status === "REVISAR" ||
+        item.metric.status === "VIGILAR",
+    )
+    .sort(
+      (a, b) =>
+        monitoringPriority(a.metric.status) -
+        monitoringPriority(b.metric.status),
+    );
   const attention = attentionAll.slice(0, 3);
   const counts = (value: Availability) =>
     current.filter(
@@ -1638,9 +1629,7 @@ function TodayDashboard({
         ).map((signal) => signal.key),
       );
       const signal = metric.signals.find(
-        (item) =>
-          ["review", "watch"].includes(item.severity) &&
-          !previousKeys.has(item.key),
+        (item) => !previousKeys.has(item.key),
       );
       return signal ? { player, signal } : null;
     })
@@ -1673,7 +1662,7 @@ function TodayDashboard({
       : "Equipo estable y registros al día.";
 
   const openTeamFilter = (filter: {
-    monitor?: Status;
+    monitor?: MonitoringStatus;
     available?: Availability;
     scope?: "all" | "attention";
     signal?: TeamSignalFilter;
@@ -1841,9 +1830,7 @@ function TodayDashboard({
                   (item) =>
                     item.playerId === player.id && item.weekId === weekId,
                 );
-                const importantSignals = metric.signals
-                  .filter((signal) => signal.severity !== "info")
-                  .slice(0, 2);
+                const importantSignals = metric.signals.slice(0, 2);
                 return (
                   <article key={player.id}>
                     <button
@@ -2650,11 +2637,14 @@ function TeamView({
   const [search, setSearch] = useState("");
   const [position, setPosition] = useState("TODAS");
   const [scope, setScope] = useState<"all" | "attention">("all");
-  const [statusFilter, setStatusFilter] = useState<Status | "TODOS">("TODOS");
+  const [statusFilter, setStatusFilter] = useState<
+    MonitoringStatus | "TODOS"
+  >("TODOS");
   const [availabilityFilter, setAvailabilityFilter] = useState<
     Availability | "TODAS"
   >("TODAS");
   const [signalFilter, setSignalFilter] = useState<TeamSignalFilter>("all");
+  const [recordFilter, setRecordFilter] = useState<TeamRecordFilter>("all");
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   useEffect(() => {
     try {
@@ -2664,16 +2654,25 @@ function TeamView({
           search?: string;
           position?: string;
           scope?: "all" | "attention";
-          status?: Status | "TODOS";
+          status?: string;
           availability?: Availability | "TODAS";
-          signal?: TeamSignalFilter;
+          signal?: TeamSignalFilter | "pending";
+          record?: TeamRecordFilter;
         };
         setSearch(value.search ?? "");
         setPosition(value.position ?? "TODAS");
         setScope(value.scope ?? "all");
-        setStatusFilter(value.status ?? "TODOS");
+        setStatusFilter(
+          value.status === "TODOS" ||
+            (value.status != null && Object.hasOwn(STATUS_META, value.status))
+            ? (value.status as MonitoringStatus | "TODOS")
+            : "TODOS",
+        );
         setAvailabilityFilter(value.availability ?? "TODAS");
-        setSignalFilter(value.signal ?? "all");
+        setSignalFilter(value.signal === "pending" ? "all" : (value.signal ?? "all"));
+        setRecordFilter(
+          value.signal === "pending" ? "pending" : (value.record ?? "all"),
+        );
       }
     } catch {
       window.sessionStorage.removeItem("ucam-team-v18");
@@ -2692,6 +2691,7 @@ function TeamView({
         status: statusFilter,
         availability: availabilityFilter,
         signal: signalFilter,
+        record: recordFilter,
       }),
     );
   }, [
@@ -2701,16 +2701,9 @@ function TeamView({
     statusFilter,
     availabilityFilter,
     signalFilter,
+    recordFilter,
     preferencesLoaded,
   ]);
-
-  const priority: Record<Status, number> = {
-    REVISAR: 0,
-    INCOMPLETO: 1,
-    VIGILAR: 2,
-    "SIN DATOS": 3,
-    OK: 4,
-  };
   const normalized = search.trim().toLocaleUpperCase("es-ES");
   const allRows = players
     .map((player) => ({
@@ -2723,7 +2716,9 @@ function TeamView({
     );
   const attentionRows = allRows.filter(
     ({ metric }) =>
-      metric.status !== "OK" || metric.availability !== "COMPLETO",
+      metric.status === "REVISAR" ||
+      metric.status === "VIGILAR" ||
+      metric.availability !== "COMPLETO",
   );
   const visibleRows = allRows
     .filter(
@@ -2736,17 +2731,17 @@ function TeamView({
         (availabilityFilter === "TODAS" ||
           metric.availability === availabilityFilter) &&
         (signalFilter === "all" ||
-          (signalFilter === "pending"
-            ? metric.pending > 0
-            : metric.signals.some((signal) =>
-                signal.key.includes(signalFilter),
-              ))) &&
+          metric.signals.some((signal) => signal.key.includes(signalFilter))) &&
+        (recordFilter === "all" || metric.pending > 0) &&
         (scope === "all" ||
-          metric.status !== "OK" ||
+          metric.status === "REVISAR" ||
+          metric.status === "VIGILAR" ||
           metric.availability !== "COMPLETO"),
     )
     .sort((a, b) => {
-      const statusDifference = priority[a.metric.status] - priority[b.metric.status];
+      const statusDifference =
+        monitoringPriority(a.metric.status) -
+        monitoringPriority(b.metric.status);
       if (statusDifference !== 0) return statusDifference;
       const availabilityDifference =
         Number(a.metric.availability === "COMPLETO") -
@@ -2764,7 +2759,7 @@ function TeamView({
     ["NO DISPONIBLE", "AUSENTE"].includes(metric.availability),
   ).length;
   const incomplete = allRows.filter(({ metric }) =>
-    ["INCOMPLETO", "SIN DATOS"].includes(metric.status),
+    ["PARTIAL", "NO_DATA"].includes(metric.recordCompleteness),
   ).length;
   const clearFilters = () => {
     setSearch("");
@@ -2773,6 +2768,7 @@ function TeamView({
     setStatusFilter("TODOS");
     setAvailabilityFilter("TODAS");
     setSignalFilter("all");
+    setRecordFilter("all");
   };
 
   return (
@@ -2862,7 +2858,9 @@ function TeamView({
             <select
               value={statusFilter}
               onChange={(event) =>
-                setStatusFilter(event.target.value as Status | "TODOS")
+                setStatusFilter(
+                  event.target.value as MonitoringStatus | "TODOS",
+                )
               }
             >
               <option value="TODOS">Todas</option>
@@ -2872,7 +2870,7 @@ function TeamView({
             </select>
           </label>
           <label>
-            Motivo
+            Señal deportiva
             <select
               value={signalFilter}
               onChange={(event) =>
@@ -2883,7 +2881,18 @@ function TeamView({
               <option value="sleep">Sueño</option>
               <option value="fatigue">Cansancio</option>
               <option value="pain">Dolor</option>
-              <option value="pending">Registros pendientes</option>
+            </select>
+          </label>
+          <label>
+            Calidad de registro
+            <select
+              value={recordFilter}
+              onChange={(event) =>
+                setRecordFilter(event.target.value as TeamRecordFilter)
+              }
+            >
+              <option value="all">Todos</option>
+              <option value="pending">Con pendientes</option>
             </select>
           </label>
         </details>
@@ -2893,7 +2902,8 @@ function TeamView({
           scope !== "all" ||
           statusFilter !== "TODOS" ||
           availabilityFilter !== "TODAS" ||
-          signalFilter !== "all") && (
+          signalFilter !== "all" ||
+          recordFilter !== "all") && (
           <button className="clear-filters" onClick={clearFilters}>Limpiar</button>
         )}
       </div>
@@ -2958,11 +2968,7 @@ function TeamView({
               </span>
               <span className="team-player-reason">
                 <strong>{metric.reasons[0] ?? "Sin señales relevantes"}</strong>
-                <small>
-                  {metric.pending
-                    ? `${metric.pending} registro${metric.pending > 1 ? "s" : ""} pendiente${metric.pending > 1 ? "s" : ""}`
-                    : "Registros al día"}
-                </small>
+                <small>{recordCompletenessText(metric)}</small>
               </span>
               <span className="team-player-context">
                 <strong>{loadLabel}</strong>
@@ -5415,7 +5421,7 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
   const step = (width - left * 2) / Math.max(visible.length, 1);
   const barWidth = Math.min(34, step * 0.58);
   const hasData = (item: PlayerMetric) =>
-    item.status !== "SIN DATOS" &&
+    item.loadCompleteness !== "NO_DATA" &&
     !(
       item.rpeExpected > 0 &&
       item.rpeCompleted === 0 &&
@@ -6546,7 +6552,13 @@ function PlayerDetail({
             </small>
           </div>
         </div>
-        <div className={`player-profile-state state-${current.status.toLocaleLowerCase("es-ES").replace(" ", "-")}`}>
+        <div
+          className={`player-profile-state ${
+            current.status === null
+              ? "state-neutral"
+              : `state-${current.status.toLocaleLowerCase("es-ES")}`
+          }`}
+        >
           <span className="eyebrow">Ahora mismo</span>
           <div className="profile-state-badges">
             <AvailabilityBadge value={current.availability} />
@@ -6558,7 +6570,7 @@ function PlayerDetail({
               ? `${primarySignal.data} · ${primarySignal.difference}`
               : current.status === "OK"
                 ? "Sin cambios que requieran priorización esta jornada."
-                : "Revisar registros pendientes antes de interpretar tendencias."}
+                : "Sin monitorización deportiva esperada esta jornada."}
           </p>
         </div>
         <details className="player-actions-menu">
@@ -6629,7 +6641,9 @@ function PlayerDetail({
                 <span><strong>{signal.label}</strong><small>{signal.data} · {signal.difference}</small></span>
                 <b>→</b>
               </button>
-            )) : (
+            )) : current.status === null ? (
+              <div className="overview-neutral-state"><span>—</span><p><strong>Sin estado deportivo</strong><small>No había exposición o registro esperado esta jornada.</small></p></div>
+            ) : (
               <div className="overview-all-clear"><span>✓</span><p><strong>Sin excepciones relevantes</strong><small>Disponibilidad y respuestas dentro del contexto esperado.</small></p></div>
             )}
             {current.pending > 0 && (

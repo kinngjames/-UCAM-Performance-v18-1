@@ -100,3 +100,18 @@ test("C1 mantiene el bienestar opcional accesible y persiste registros nuevos", 
   assert.doesNotMatch(page, /\bcompliance\b/);
   assert.doesNotMatch(page, /\bstreak\b/);
 });
+
+test("C6 separa monitorización deportiva y completitud administrativa", async () => {
+  const [page, signals, types] = await Promise.all([
+    read("../app/page.tsx").then(runtimeSource),
+    read("../domain/metrics/signals.ts"),
+    read("../domain/metrics/types.ts"),
+  ]);
+  assert.doesNotMatch(page, /INCOMPLETO|SIN DATOS|Registro incompleto/);
+  assert.doesNotMatch(signals, /key:\s*"pending"|Registro incompleto|"info"/);
+  assert.doesNotMatch(types, /"INCOMPLETO"|"SIN DATOS"|"info"/);
+  assert.match(types, /export type Status = MonitoringStatus \| null/);
+  assert.match(types, /export type RecordCompleteness/);
+  assert.match(page, /Calidad de registro/);
+  assert.match(page, /recordCompletenessText/);
+});

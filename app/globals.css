@@ -608,19 +608,11 @@ textarea:focus-visible {
   color: #fff;
   background: #f97066;
 }
-.status-incompleto {
-  color: #6941c6;
-  background: #f1eefe;
-}
-.status-incompleto > span {
-  background: #d9d0ff;
-}
-.status-sin-datos {
+.monitoring-empty {
+  display: inline-block;
   color: #667085;
-  background: #f2f4f7;
-}
-.status-sin-datos > span {
-  background: #e4e7ec;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .signal-list {
@@ -8997,13 +8989,15 @@ body {
   color: #9c6500;
   background: #fff6dd;
 }
-.overview-all-clear {
+.overview-all-clear,
+.overview-neutral-state {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 15px 0;
 }
-.overview-all-clear > span {
+.overview-all-clear > span,
+.overview-neutral-state > span {
   display: grid;
   place-items: center;
   width: 29px;
@@ -9012,16 +9006,25 @@ body {
   color: #16794a;
   background: #e9f8f0;
 }
+.overview-neutral-state > span {
+  color: #667085;
+  background: #f2f4f7;
+}
 .overview-all-clear p,
 .overview-all-clear strong,
-.overview-all-clear small {
+.overview-all-clear small,
+.overview-neutral-state p,
+.overview-neutral-state strong,
+.overview-neutral-state small {
   display: block;
   margin: 0;
 }
-.overview-all-clear strong {
+.overview-all-clear strong,
+.overview-neutral-state strong {
   font-size: 9px;
 }
-.overview-all-clear small {
+.overview-all-clear small,
+.overview-neutral-state small {
   margin-top: 3px;
   color: var(--muted);
   font-size: 8px;

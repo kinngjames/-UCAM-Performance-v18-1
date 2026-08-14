@@ -44,6 +44,7 @@ La UI es funcional pero monolítica. La extracción de módulos debe hacerse por
 
 - `domain/metrics/`: hogar único de tipos, primitivas, formateo contractual, señales y `buildMetrics`.
 - Producción y los arneses golden/adversarial importan el mismo orquestador puro; el calendario entra como dependencia tipada.
+- `recordCompleteness` y `pending` describen calidad administrativa; `status`, `signals` y `reasons` describen únicamente monitorización deportiva.
 - `docs/METRICS.md` es el contrato canónico hasta completar la centralización.
 
 ### Persistencia

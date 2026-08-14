@@ -5,12 +5,15 @@ export type Attendance =
   | "AUSENTE"
   | "SIN DATO";
 
-export type Status =
-  | "OK"
-  | "VIGILAR"
-  | "REVISAR"
-  | "INCOMPLETO"
-  | "SIN DATOS";
+export type MonitoringStatus = "OK" | "VIGILAR" | "REVISAR";
+
+export type Status = MonitoringStatus | null;
+
+export type RecordCompleteness =
+  | "COMPLETE"
+  | "PARTIAL"
+  | "NO_DATA"
+  | "NOT_EXPECTED";
 
 export type LoadCompleteness =
   | "COMPLETE"
@@ -96,7 +99,7 @@ export type Signal = {
   difference: string;
   explanation: string;
   action: string;
-  severity: "watch" | "review" | "info";
+  severity: "watch" | "review";
 };
 
 export type AvailabilityRecord = {
@@ -163,6 +166,7 @@ export type PlayerMetric = {
   wellbeingExpected: 0 | 1;
   wellbeingDone: boolean;
   pending: number;
+  recordCompleteness: RecordCompleteness;
   chronic: number | null;
   ewma: number | null;
   ratio: number | null;
