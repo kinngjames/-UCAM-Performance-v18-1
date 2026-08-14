@@ -1,0 +1,1 @@
+ALTER TABLE `match_participation` ADD `minutes_recorded` integer DEFAULT true NOT NULL;

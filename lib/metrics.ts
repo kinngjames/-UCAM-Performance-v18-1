@@ -1,0 +1,115 @@
+export const loadForEffort = (
+  rpe: number | null | undefined,
+  minutes: number | null | undefined,
+) => Math.round((rpe ?? 0) * (minutes ?? 0));
+
+export const loadForCompleteEffort = (
+  rpe: number | null | undefined,
+  minutes: number | null | undefined,
+) =>
+  typeof rpe === "number" &&
+  Number.isFinite(rpe) &&
+  typeof minutes === "number" &&
+  Number.isFinite(minutes)
+    ? Math.round(rpe * minutes)
+    : null;
+
+export type LoadCompleteness =
+  | "COMPLETE"
+  | "PARTIAL"
+  | "NO_EXPOSURE"
+  | "NO_DATA";
+
+export const classifyLoadCompleteness = ({
+  expectedEfforts,
+  completedEfforts,
+  explicitNoExposure,
+}: {
+  expectedEfforts: number;
+  completedEfforts: number;
+  explicitNoExposure: boolean;
+}): LoadCompleteness => {
+  if (expectedEfforts > 0 && completedEfforts === expectedEfforts)
+    return "COMPLETE";
+  if (completedEfforts > 0) return "PARTIAL";
+  if (expectedEfforts === 0 && explicitNoExposure) return "NO_EXPOSURE";
+  return "NO_DATA";
+};
+
+export const summarizeLoadCoverage = (states: LoadCompleteness[]) => ({
+  complete: states.filter((state) => state === "COMPLETE").length,
+  partial: states.filter((state) => state === "PARTIAL").length,
+  noExposure: states.filter((state) => state === "NO_EXPOSURE").length,
+  noData: states.filter((state) => state === "NO_DATA").length,
+});
+
+export const weeklyLoad = (loads: number[]) =>
+  loads.reduce((total, value) => total + value, 0);
+
+export const meanValue = (values: Array<number | null | undefined>) => {
+  const valid = values.filter(
+    (value): value is number =>
+      typeof value === "number" && Number.isFinite(value),
+  );
+  return valid.length
+    ? valid.reduce((sum, value) => sum + value, 0) / valid.length
+    : null;
+};
+
+export const standardDeviation = (values: number[]) => {
+  if (values.length < 2) return 0;
+  const average = meanValue(values) ?? 0;
+  return Math.sqrt(
+    values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
+      values.length,
+  );
+};
+
+export const personalBaseline = (
+  priorValues: Array<number | null | undefined>,
+  minimumRecords = 5,
+) => {
+  const valid = priorValues.filter(
+    (value): value is number =>
+      typeof value === "number" && Number.isFinite(value),
+  );
+  if (valid.length < minimumRecords) return null;
+  const mean = meanValue(valid)!;
+  const sd = standardDeviation(valid);
+  return { mean, range: [mean - sd, mean + sd] as [number, number], sd };
+};
+
+export const zScore = (
+  value: number | null | undefined,
+  baseline: ReturnType<typeof personalBaseline>,
+) =>
+  value == null || !baseline || baseline.sd === 0
+    ? null
+    : (value - baseline.mean) / baseline.sd;
+
+export const nextEwma = (
+  current: number,
+  previous: number | null,
+  alpha = 0.4,
+) => (previous == null ? current : alpha * current + (1 - alpha) * previous);
+
+export const compliancePercent = (
+  completedRpe: number,
+  expectedRpe: number,
+  wellnessCompleted: boolean,
+) =>
+  Math.round(
+    ((completedRpe + (wellnessCompleted ? 1 : 0)) /
+      Math.max(1, expectedRpe + 1)) *
+      100,
+  );
+
+export const monotonyAndStrain = (dailyLoads: number[]) => {
+  const average = meanValue(dailyLoads) ?? 0;
+  const sd = standardDeviation(dailyLoads);
+  const monotony = sd ? average / sd : null;
+  return {
+    monotony,
+    strain: monotony == null ? null : weeklyLoad(dailyLoads) * monotony,
+  };
+};
