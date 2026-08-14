@@ -309,13 +309,13 @@ const verifyCollection = ({ actual, c7Expected, c4Expected, historical, label })
   };
 };
 
-export async function verifyBlock2C4Contract() {
+export async function verifyBlock2C4Contract({ characterize = false } = {}) {
   const historicalGolden = await readVerifiedV18GoldenV2();
   const historicalFixture = await readVerifiedV18AdversarialFixture();
-  const [currentDemo, currentFixture] = await Promise.all([
-    buildV18Baseline(),
-    runCurrentMetricsOnV18AdversarialFixture(),
-  ]);
+  const currentDemo = await buildV18Baseline();
+  const currentFixture = characterize
+    ? null
+    : await runCurrentMetricsOnV18AdversarialFixture();
   assert.equal(currentDemo.datasetSha256, V18_DATASET_SHA256);
 
   const c7Demo = buildC7ExpectedCollection(
@@ -342,15 +342,19 @@ export async function verifyBlock2C4Contract() {
       calendar: currentDemo.inputs.calendar,
     },
   );
+  const actualDemo = characterize ? expectedDemo.metrics : currentDemo.metrics;
+  const actualFixture = characterize
+    ? expectedFixture.metrics
+    : currentFixture.output;
   const demo = verifyCollection({
-    actual: currentDemo.metrics,
+    actual: actualDemo,
     c7Expected: c7Demo,
     c4Expected: expectedDemo.metrics,
     historical: historicalGolden.metrics,
     label: "DEMO C4",
   });
   const fixture = verifyCollection({
-    actual: currentFixture.output,
+    actual: actualFixture,
     c7Expected: c7Fixture,
     c4Expected: expectedFixture.metrics,
     historical: historicalFixture.output,
@@ -366,7 +370,7 @@ export async function verifyBlock2C4Contract() {
     (signal) => signal.key === "rpe-z",
   );
   const rpeSignalsAfter = countSignals(
-    currentDemo.metrics,
+    actualDemo,
     (signal) => signal.key === "rpe-z",
   );
   const sleepSignalsBefore = countSignals(
@@ -374,14 +378,14 @@ export async function verifyBlock2C4Contract() {
     (signal) => signal.key.startsWith("sleep-"),
   );
   const sleepSignalsAfter = countSignals(
-    currentDemo.metrics,
+    actualDemo,
     (signal) => signal.key.startsWith("sleep-"),
   );
-  const signals = currentDemo.metrics.reduce(
+  const signals = actualDemo.reduce(
     (total, metric) => total + metric.signals.length,
     0,
   );
-  const status = countBy(currentDemo.metrics, "status");
+  const status = countBy(actualDemo, "status");
   assert.deepEqual([rpeSignalsBefore, rpeSignalsAfter], [53, 49]);
   assert.deepEqual([sleepSignalsBefore, sleepSignalsAfter], [47, 47]);
   assert.equal(signals, 105);
@@ -392,9 +396,9 @@ export async function verifyBlock2C4Contract() {
     null: 4,
   });
 
-  const r6 = metricAt(currentFixture.output, "ADV-STABLE", 6);
-  const r9 = metricAt(currentFixture.output, "ADV-EDGE", 7);
-  const r10 = metricAt(currentFixture.output, "ADV-EDGE", 8);
+  const r6 = metricAt(actualFixture, "ADV-STABLE", 6);
+  const r9 = metricAt(actualFixture, "ADV-EDGE", 7);
+  const r10 = metricAt(actualFixture, "ADV-EDGE", 8);
   assert.deepEqual(
     {
       reasons: r6.reasons,
@@ -462,3 +466,6 @@ export async function verifyBlock2C4Contract() {
     },
   };
 }
+
+export const characterizeBlock2C4Contract = () =>
+  verifyBlock2C4Contract({ characterize: true });

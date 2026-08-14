@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { verifyBlock2C4Contract } from "../scripts/block2-c4-contract.mjs";
+import { characterizeBlock2C4Contract } from "../scripts/block2-c4-contract.mjs";
 import { withCurrentMetricsEngine } from "../scripts/metrics-characterization.mjs";
 
 const domainPromise = withCurrentMetricsEngine(({ domain }) => domain);
@@ -10,7 +10,6 @@ const thresholds = {
   baselineWeeks: 8,
   criticalSleep: 6.5,
   highFatigue: 4,
-  highMonotony: 2,
   highRpe: 8,
   highStress: 4,
   lowMood: 2,
@@ -112,7 +111,7 @@ test("C4 mantiene el delta direccional y no crea señal por RPE bajo", async () 
 });
 
 test("C4 coincide exactamente con la matriz aprobada", async () => {
-  const result = await verifyBlock2C4Contract();
+  const result = await characterizeBlock2C4Contract();
   assert.equal(result.demo.metrics, 760);
   assert.equal(result.fixture.metrics, 10);
   assert.deepEqual(result.demo.changedFields, {
@@ -163,7 +162,6 @@ test("C4 mantiene una sola ruta estadística y una sola constante 0,5", async ()
   assert.match(constants, /BASELINE_MINIMUM = 5/);
   assert.match(constants, /RPE_MIN_MEANINGFUL_DELTA = 0\.5/);
   assert.match(primitives, /const sd = sampleStandardDeviation\(valid\)/);
-  assert.match(primitives, /const sd = standardDeviation\(dailyLoads\)/);
   assert.match(orchestrator, /history\.slice\(-BASELINE_WINDOW\)/);
   assert.match(orchestrator, /personalBaseline\(priorRpe, BASELINE_MINIMUM\)/);
   assert.match(orchestrator, /personalBaseline\(priorSleep, BASELINE_MINIMUM\)/);

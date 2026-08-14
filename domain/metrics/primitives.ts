@@ -70,16 +70,6 @@ export const meanValue = (values: Array<number | null | undefined>) => {
     : null;
 };
 
-export const standardDeviation = (values: number[]) => {
-  if (values.length < 2) return 0;
-  const average = meanValue(values) ?? 0;
-  // Population SD remains available for descriptive calculations such as monotony.
-  return Math.sqrt(
-    values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
-      values.length,
-  );
-};
-
 export const sampleStandardDeviation = (values: number[]) => {
   if (values.length < 2) return null;
   const average = meanValue(values);
@@ -150,16 +140,6 @@ export const classifyRecordCompleteness = ({
   if (completed === expected) return "COMPLETE";
   if (completed > 0) return "PARTIAL";
   return "NO_DATA";
-};
-
-export const monotonyAndStrain = (dailyLoads: number[]) => {
-  const average = meanValue(dailyLoads) ?? 0;
-  const sd = standardDeviation(dailyLoads);
-  const monotony = sd ? average / sd : null;
-  return {
-    monotony,
-    strain: monotony == null ? null : weeklyLoad(dailyLoads) * monotony,
-  };
 };
 
 export const round = (value: number | null, decimals = 1) =>

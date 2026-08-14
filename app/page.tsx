@@ -149,7 +149,6 @@ const ACTIVE_THRESHOLD_KEYS: Array<keyof Thresholds> = [
   "criticalSleep",
   "zScore",
   "baselineWeeks",
-  "highMonotony",
 ];
 const toActiveThresholds = (source: Record<string, unknown>): Thresholds =>
   Object.fromEntries(
@@ -4616,8 +4615,6 @@ function LoadView({
   players,
   playerOrder,
   setPlayerOrder,
-  advancedOpen,
-  setAdvancedOpen,
   historyIndex,
   setHistoryIndex,
 }: {
@@ -4628,8 +4625,6 @@ function LoadView({
   players: RosterPlayer[];
   playerOrder: "high" | "low" | "name";
   setPlayerOrder: (order: "high" | "low" | "name") => void;
-  advancedOpen: boolean;
-  setAdvancedOpen: (open: boolean) => void;
   historyIndex: number;
   setHistoryIndex: (index: number) => void;
 }) {
@@ -4921,64 +4916,6 @@ function LoadView({
         </div>
       </section>
 
-      <details
-        className="panel load-advanced-details"
-        open={advancedOpen}
-        onToggle={(event) => setAdvancedOpen(event.currentTarget.open)}
-      >
-        <summary>
-          <div>
-            <span className="eyebrow">Análisis avanzado</span>
-            <h2>Análisis avanzado por jugador</h2>
-          </div>
-          <span className="quiet-label">
-            Monotonía · strain
-          </span>
-        </summary>
-        {advancedOpen && (
-          <div className="load-advanced-body">
-            <p className="advanced-context-note">
-              Estas métricas describen la distribución registrada. No se utilizan
-              como predictores de lesión.
-            </p>
-            <dl className="advanced-glossary">
-              <div><dt>Monotonía</dt><dd>Cuánto se parece la carga de unos días a otros.</dd></div>
-              <div><dt>Strain</dt><dd>Carga semanal multiplicada por la monotonía.</dd></div>
-            </dl>
-            <div className="load-advanced-scroll">
-              <div className="load-advanced-head">
-                <span>Jugador</span>
-                <span>Entreno</span>
-                <span>Partido</span>
-                <span>Total</span>
-                <span>Monotonía</span>
-                <span>Strain</span>
-              </div>
-              {current.map(({ player, metric, known }) => {
-                return (
-                  <button
-                    key={player.id}
-                    className="load-advanced-row"
-                    onClick={() => onOpenPlayer(player.id)}
-                  >
-                    <span className="player-cell">
-                      <span className="number-badge">{player.number}</span>
-                      <strong>{titleCase(player.name)}</strong>
-                    </span>
-                    <span>{known ? compact(metric.trainingLoad) : "—"}</span>
-                    <span>{known ? compact(metric.matchLoad) : "—"}</span>
-                    <strong>
-                      {known ? `${compact(metric.load)} UA` : "—"}
-                    </strong>
-                    <span>{display(metric.monotony, 2)}</span>
-                    <span>{compact(metric.strain)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </details>
     </div>
   );
 }
@@ -5847,29 +5784,6 @@ function LegacyPlayerDetail({
                     : "Sin planificación"}
                 </em>
               </div>
-              <details className="inline-advanced">
-                <summary>Ver análisis avanzado de carga</summary>
-                <div className="advanced-inline">
-                  <span>
-                    Media 4 sem. <b>{compact(current.chronic)} UA</b>
-                  </span>
-                  <span>
-                    EWMA <b>{compact(current.ewma)} UA</b>
-                  </span>
-                  <span>
-                    Monotonía <b>{display(current.monotony, 2)}</b>
-                  </span>
-                  <span>
-                    Strain <b>{compact(current.strain)}</b>
-                  </span>
-                  <span>
-                    Ratio de cambio <b>{display(current.ratio, 2)}</b>
-                  </span>
-                </div>
-                <small>
-                  El ratio describe cambios de carga; no predice lesiones.
-                </small>
-              </details>
             </section>
             <section className="panel chart-panel">
               <div className="panel-heading">
@@ -6434,6 +6348,7 @@ function PlayerDetail({
               <div><dt>Anterior</dt><dd>{compact(previous?.load ?? null)} UA</dd></div>
               <div><dt>Entrenamiento</dt><dd>{compact(current.trainingLoad + current.compensatoryLoad)} UA</dd></div>
               <div><dt>Competición</dt><dd>{compact(current.matchLoad)} UA</dd></div>
+              <div><dt>Z-RPE personal</dt><dd>{current.zRpe == null ? "—" : display(current.zRpe, 2)}</dd></div>
             </dl>
           </section>
 
@@ -6469,11 +6384,6 @@ function PlayerDetail({
             </div>
           </section>
 
-          <details className="panel player-advanced-v7">
-            <summary><span><strong>Análisis avanzado</strong><small>Segundo nivel · contexto descriptivo</small></span><b>Mostrar</b></summary>
-            <div><span>Monotonía <b>{display(current.monotony, 2)}</b></span><span>Strain <b>{compact(current.strain)}</b></span><span>Z-RPE <b>{display(current.zRpe, 2)}</b></span></div>
-            <p>Estas métricas aportan contexto y no predicen lesiones.</p>
-          </details>
         </div>
       ) : tab === "wellbeing" ? (
         <PlayerWellbeingExplorer history={history} pains={pains} />
@@ -9217,7 +9127,6 @@ export default function Home() {
   const [loadOrder, setLoadOrder] = useState<
     "high" | "low" | "name"
   >("high");
-  const [loadAdvancedOpen, setLoadAdvancedOpen] = useState(false);
   const [loadHistoryIndex, setLoadHistoryIndex] = useState(7);
   const [playerRegisterTarget, setPlayerRegisterTarget] = useState<
     number | "match" | "wellbeing" | null
@@ -9924,8 +9833,6 @@ export default function Home() {
             players={activeRoster}
             playerOrder={loadOrder}
             setPlayerOrder={setLoadOrder}
-            advancedOpen={loadAdvancedOpen}
-            setAdvancedOpen={setLoadAdvancedOpen}
             historyIndex={loadHistoryIndex}
             setHistoryIndex={setLoadHistoryIndex}
             onOpenPlayer={openPlayer}

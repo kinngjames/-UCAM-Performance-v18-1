@@ -1,6 +1,6 @@
 # Contrato de métricas
 
-Este documento describe el contrato vigente en UCAM Performance v18.1 hasta C4. Cualquier cambio de fórmula requiere tests de caracterización, revisión de producto y actualización simultánea de este documento.
+Este documento describe el contrato vigente en UCAM Performance v18.1 hasta C5. Cualquier cambio de fórmula requiere tests de caracterización, revisión de producto y actualización simultánea de este documento.
 
 ## Convenciones
 
@@ -8,7 +8,6 @@ Este documento describe el contrato vigente en UCAM Performance v18.1 hasta C4. 
 - **Semana/jornada actual:** la seleccionada en el contexto de la aplicación.
 - **Dato válido:** número finito. `null`, `undefined` y registro ausente son **sin dato**, no cero.
 - **Media:** media aritmética de valores válidos exclusivamente.
-- **Desviación estándar poblacional:** divisor `N`; se conserva para describir el vector observado de monotonía mientras esa métrica siga activa.
 - **Desviación estándar muestral:** divisor `n−1`; se usa exclusivamente en los baselines personales de RPE y sueño para estimar su variabilidad subyacente.
 - **Redondeo:** cargas por esfuerzo se redondean al entero más cercano; valores de UI se formatean sin falsa precisión.
 
@@ -84,21 +83,17 @@ variación_% = (actual − anterior) / anterior × 100
 
 - No se calcula si falta cualquiera de los valores o si el anterior es cero.
 
-## Monotonía y strain
+## Campos de compatibilidad retirados en C5
 
-Vector semanal actual:
+`monotony` y `strain` permanecen temporalmente en `PlayerMetric` únicamente
+para conservar compatibilidad de contrato. Ambos valen siempre `null`.
 
-```text
-[carga S1, S2, S3, S4, partido, compensatoria, 0]
-```
-
-```text
-monotonía = media(cargas_diarias) / SD_poblacional(cargas_diarias)
-strain = carga_total_semanal × monotonía
-```
-
-- Si `SD = 0`, monotonía y strain son `sin dato`.
-- Son métricas avanzadas y no dominan HOY ni el resumen del jugador.
+- No se construye un vector que trate sesiones, partido, compensatoria y un
+  cero de relleno como si fueran siete días.
+- No existe cálculo, señal, decisión, filtro, ordenación ni consumidor visible
+  asociado a estos campos.
+- No se presenta un sustituto mientras no exista carga distribuida por días
+  reales con un contrato defendible.
 
 ## Duración operativa de sesión
 

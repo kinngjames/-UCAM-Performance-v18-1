@@ -87,7 +87,6 @@ export type Thresholds = {
   criticalSleep: number;
   zScore: number;
   baselineWeeks: number;
-  highMonotony: number;
 };
 
 export type Signal = {

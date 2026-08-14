@@ -40,3 +40,9 @@ No resolver varias deudas a la vez. Añadir tests de caracterización, cambiar u
   formar parte del producto activo y no debe restaurarse automáticamente como
   si su ausencia fuera una regresión. La duración prevista sí permanece como
   dato operativo para el registro en lote.
+- **Retirada de monotonía y strain (v18.1 C5).** El vector anterior mezclaba
+  sesiones, partido, compensatoria y un cero de relleno como si fueran días.
+  C5 retira el cálculo y todos sus consumidores; los dos campos permanecen
+  temporalmente como `null` solo por compatibilidad. El bloque «Análisis
+  avanzado» se elimina porque, tras C7+C5, solo duplicaba carga ya visible. El
+  Z-RPE que contenía se conserva una vez dentro del contexto personal de carga.

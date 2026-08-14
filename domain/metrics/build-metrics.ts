@@ -4,7 +4,6 @@ import {
   classifyRecordCompleteness,
   loadForCompleteEffort,
   meanValue as mean,
-  monotonyAndStrain,
   personalBaseline,
   registrationPending,
   round,
@@ -139,17 +138,6 @@ export function buildMetrics({
         completedEfforts: completedLoadEfforts,
         explicitNoExposure,
       });
-      const sessionLoads = [1, 2, 3, 4].map((session) =>
-        loadRows
-          .filter((item) => item.session === session)
-          .reduce(
-            (sum, item) =>
-              sum + loadForCompleteEffort(item.rpe, item.minutes),
-            0,
-          ),
-      );
-      const daily = [...sessionLoads, matchLoad, compensatoryLoad, 0];
-      const { monotony, strain } = monotonyAndStrain(daily);
       const avgRpe = mean(trained.map((item) => item.rpe));
       const baselineRows = history.slice(-BASELINE_WINDOW);
       const priorRpe = baselineRows
@@ -232,8 +220,8 @@ export function buildMetrics({
         wellbeingDone,
         pending,
         recordCompleteness,
-        monotony: round(monotony, 2),
-        strain: round(strain, 0),
+        monotony: null,
+        strain: null,
         zRpe: round(zRpe, 2),
         zSleep: round(zSleep, 2),
         personalRpe: round(personalRpe),

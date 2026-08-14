@@ -76,7 +76,7 @@ Mobile-first y deliberadamente simple:
 - Planificación operativa de la duración de sesión como valor por defecto del registro en lote.
 - Bienestar semanal: sueño, ánimo, cansancio, dolor, estrés y observaciones.
 - Dolor con zona, intensidad, limitación, nota e histórico.
-- Baseline personal, rango habitual, tendencias, z-score y análisis avanzado.
+- Baseline personal, rango habitual, tendencias y z-score contextual.
 - Registros de RPE y bienestar mostrados por separado según sus oportunidades esperadas.
 - Alertas explicables con estados y revisiones persistentes.
 - Informes preentrenamiento, semanal e individual.

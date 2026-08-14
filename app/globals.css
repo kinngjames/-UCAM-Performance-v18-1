@@ -5738,34 +5738,6 @@ textarea:focus-visible {
   border-radius: 6px;
   background: linear-gradient(90deg, #1a7b4e, #2da968);
 }
-.advanced-inline {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-  margin-top: 12px;
-}
-.advanced-inline > span,
-.advanced-inline div {
-  display: grid;
-  gap: 4px;
-  padding: 9px;
-  border-radius: 9px;
-  background: #f4f7f5;
-  color: var(--muted);
-  font-size: 8px;
-}
-.advanced-inline small {
-  display: block;
-  color: var(--muted);
-  font-size: 7px;
-  text-transform: uppercase;
-}
-.advanced-inline strong,
-.advanced-inline b {
-  display: block;
-  color: var(--ink);
-  font-size: 10px;
-}
 .baseline-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -8273,21 +8245,6 @@ body {
   grid-column: 1/-1;
   font-style: normal;
 }
-.inline-advanced {
-  margin-top: 12px;
-  border-top: 1px solid #e5ebef;
-}
-.inline-advanced > summary {
-  padding: 12px 0 4px;
-  color: var(--ucam-blue);
-  font-size: 10px;
-  font-weight: 800;
-  cursor: pointer;
-}
-.inline-advanced .advanced-inline {
-  margin-top: 10px;
-}
-
 .line-chart circle {
   cursor: help;
 }
@@ -9229,7 +9186,7 @@ body {
 }
 .load-decision-strip dl {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   margin: 0;
 }
@@ -9256,7 +9213,6 @@ body {
 .exposure-windows,
 .weekly-efforts,
 .competition-context-v7,
-.player-advanced-v7,
 .player-load-chart,
 .wellness-command,
 .pain-register-details,
@@ -9451,7 +9407,6 @@ body {
 .competition-minutes-spark .chart-range {
   display: none;
 }
-.player-advanced-v7 > summary,
 .pain-register-details > summary,
 .season-record-table > summary {
   display: flex;
@@ -9460,9 +9415,6 @@ body {
   cursor: pointer;
   list-style: none;
 }
-.player-advanced-v7 > summary span,
-.player-advanced-v7 > summary strong,
-.player-advanced-v7 > summary small,
 .pain-register-details > summary span,
 .pain-register-details > summary strong,
 .pain-register-details > summary small,
@@ -9471,38 +9423,18 @@ body {
 .season-record-table > summary small {
   display: block;
 }
-.player-advanced-v7 > summary small,
 .pain-register-details > summary small,
 .season-record-table > summary small {
   margin-top: 3px;
   color: var(--muted);
   font-size: 8px;
 }
-.player-advanced-v7 > summary b,
 .pain-register-details > summary b,
 .season-record-table > summary b {
   color: var(--ucam-blue);
   font-size: 8px;
   text-transform: uppercase;
 }
-.player-advanced-v7[open] > div {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  margin-top: 15px;
-}
-.player-advanced-v7[open] > div span {
-  padding: 10px;
-  border-radius: 9px;
-  background: #f3f6f8;
-  font-size: 8px;
-}
-.player-advanced-v7 > p {
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-size: 8px;
-}
-
 .wellness-command {
   display: grid;
   gap: 15px;
@@ -10047,7 +9979,6 @@ body {
   .exposure-windows,
   .weekly-efforts,
   .competition-context-v7,
-  .player-advanced-v7,
   .player-load-chart,
   .wellness-command,
   .pain-register-details,
@@ -10069,9 +10000,6 @@ body {
   .weekly-effort-head,
   .weekly-effort-row {
     grid-template-columns: 0.7fr 0.7fr 0.8fr 1fr;
-  }
-  .player-advanced-v7[open] > div {
-    grid-template-columns: 1fr 1fr;
   }
   .performance-load-svg {
     min-width: 560px;
@@ -11222,8 +11150,7 @@ body {
 .load-workspace .section-header > div,
 .load-command-panel,
 .load-trend-panel,
-.load-players-panel,
-.load-advanced-details {
+.load-players-panel {
   min-width: 0;
   max-width: 100%;
 }
@@ -11864,109 +11791,6 @@ body {
   text-align: right;
 }
 
-.load-advanced-details {
-  overflow: hidden;
-  border-radius: 17px;
-}
-
-.load-advanced-details > summary {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  align-items: center;
-  padding: 17px 22px;
-  list-style: none;
-  cursor: pointer;
-}
-
-.load-advanced-details > summary::-webkit-details-marker {
-  display: none;
-}
-
-.load-advanced-details > summary::after {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 26px;
-  border-radius: 8px;
-  color: #174d73;
-  background: #edf3f7;
-  content: "+";
-  font-size: 15px;
-  font-weight: 900;
-}
-
-.load-advanced-details[open] > summary::after {
-  content: "−";
-}
-
-.load-advanced-details > summary h2 {
-  margin: 4px 0 0;
-  color: #183b58;
-  font-size: 15px;
-}
-
-.load-advanced-details > summary .quiet-label {
-  margin-left: auto;
-}
-
-.load-advanced-body {
-  border-top: 1px solid #e5ebef;
-}
-
-.load-advanced-body .advanced-context-note {
-  margin: 0;
-  padding: 13px 18px;
-  color: #65798a;
-  background: #f7f9fa;
-  font-size: 8px;
-}
-
-.load-advanced-scroll {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-}
-
-.load-advanced-head,
-.load-advanced-row {
-  display: grid;
-  grid-template-columns: minmax(165px, 1.35fr) repeat(5, minmax(75px, 1fr));
-  gap: 10px;
-  align-items: center;
-  min-width: 650px;
-}
-
-.load-advanced-head {
-  padding: 10px 16px;
-  color: #7a8a97;
-  background: #f2f5f7;
-  font-size: 7px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.load-advanced-row {
-  width: 100%;
-  padding: 10px 16px;
-  border: 0;
-  border-top: 1px solid #e8edf1;
-  background: #fff;
-  font-size: 8px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.load-advanced-row:hover {
-  background: #f8fafb;
-}
-
-.load-advanced-row strong {
-  font-size: 9px;
-}
-
 @media (max-width: 1120px) {
   .load-command-panel {
     grid-template-columns: 1fr 1fr;
@@ -12247,14 +12071,6 @@ body {
     display: none;
   }
 
-  .load-advanced-details > summary {
-    align-items: flex-start;
-    padding: 15px 17px;
-  }
-
-  .load-advanced-details > summary .quiet-label {
-    display: none;
-  }
 }
 
 @media (max-width: 430px) {

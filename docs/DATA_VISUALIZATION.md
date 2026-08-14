@@ -38,7 +38,7 @@ Se auditaron 25 bloques de visualización activos. Los micrográficos repetidos 
 | CARGA · plan/real actual | ¿Se cumplió el plan? | Mantener barras comparables + diferencia absoluta y porcentual. |
 | CARGA · evolución colectiva | ¿Cómo se construyó la carga? | Mantener y mejorar: barras apiladas + plan, selección táctil/teclado y móvil específico. |
 | CARGA · origen por jugador | ¿Qué compone la carga individual? | Mantener microbarra en tabla ordenable. |
-| CARGA · avanzado | ¿Qué aportan monotonía y strain? | Mantener como tabla lazy bajo demanda; sin gráficos. |
+| CARGA · detalle retirado | ¿Queda analítica defendible tras C7/C5? | Eliminar el bloque residual: duplicaba carga ya visible y dependía de métricas retiradas. Z-RPE se conserva una sola vez en el contexto personal de carga. |
 | EVOLUCIÓN · matriz | ¿Quién y qué está cambiando? | Eliminar 5 sparklines por jugador; sustituir por valor + dirección + etiqueta. |
 | FICHA · origen actual | ¿Qué parte es entrenamiento y competición? | Mantener barra apilada compacta. |
 | FICHA · plan/real | ¿Cuál es la diferencia actual? | Mantener comparación directa. |

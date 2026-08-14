@@ -17,7 +17,6 @@ const emptyBuildInput = (calendar) => ({
     baselineWeeks: 8,
     criticalSleep: 6.5,
     highFatigue: 4,
-    highMonotony: 2,
     highRpe: 8,
     highStress: 4,
     lowMood: 2,
@@ -88,17 +87,6 @@ test("la media ignora ausencias sin convertirlas en cero", async () => {
   assert.equal(meanValue([null, undefined]), null);
   assert.equal(meanValue([2, null, 4, undefined]), 3);
   assert.equal(meanValue([2, Number.NaN, 4, Number.POSITIVE_INFINITY]), 3);
-});
-
-test("la SD poblacional permanece aislada de los baselines personales", async () => {
-  const { standardDeviation } = await metricsPromise;
-  assert.equal(standardDeviation([]), 0);
-  assert.equal(standardDeviation([4]), 0);
-  assert.equal(standardDeviation([4, 4, 4]), 0);
-  assert.ok(
-    Math.abs(standardDeviation([1, 2, 3]) - Math.sqrt(2 / 3)) <
-      Number.EPSILON,
-  );
 });
 
 test("la SD muestral usa n−1 y no estima con una observación", async () => {
@@ -340,17 +328,6 @@ test("C6 permite que dolor voluntario REVISAR gane a NOT_EXPECTED", async () => 
   assert.equal(metric.status, "REVISAR");
 });
 
-test("monotonía y strain comparten la misma carga semanal", async () => {
-  const { monotonyAndStrain } = await metricsPromise;
-  assert.deepEqual(monotonyAndStrain([0, 0, 0, 0, 0, 0, 0]), {
-    monotony: null,
-    strain: null,
-  });
-  const result = monotonyAndStrain([1, 2, 3]);
-  assert.ok(Math.abs(result.monotony - Math.sqrt(6)) < 1e-12);
-  assert.ok(Math.abs(result.strain - 6 * Math.sqrt(6)) < 1e-12);
-});
-
 test("distingue completo, parcial, sin exposición y sin datos", async () => {
   const metrics = await metricsPromise;
   assert.equal(
@@ -407,7 +384,6 @@ test("producción consume el dominio central sin copias inline", async () => {
   assert.match(page, /buildMetrics/);
   for (const primitive of [
     "meanValue as mean",
-    "monotonyAndStrain",
     "personalBaseline",
     "registrationPending",
     "wellbeingExpectedForAvailability",
@@ -434,10 +410,12 @@ test("producción consume el dominio central sin copias inline", async () => {
   assert.doesNotMatch(page, /\bloadForEffort\b/);
   assert.doesNotMatch(engine, /\bloadForEffort\b/);
   assert.doesNotMatch(orchestrator, /\bloadForEffort\b/);
-  assert.doesNotMatch(orchestrator, /standardDeviation as sd/);
+  assert.doesNotMatch(orchestrator, /standardDeviation|monotonyAndStrain/);
   assert.doesNotMatch(
     orchestrator,
     /\bnextEwma\b|plannedTrainingLoad|plannedMatchLoad|\bchronic\b|\bewma\b|\bratio\b/,
   );
   assert.equal("nextEwma" in (await metricsPromise), false);
+  assert.equal("monotonyAndStrain" in (await metricsPromise), false);
+  assert.equal("standardDeviation" in (await metricsPromise), false);
 });
