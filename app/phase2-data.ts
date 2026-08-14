@@ -1,45 +1,29 @@
 import { CALENDAR, INITIAL_PLAYERS, INITIAL_SESSIONS, INITIAL_WELLBEING } from "./data";
+import type {
+  Availability,
+  AvailabilityRecord,
+  Convocation,
+  MatchRecord,
+  SessionPlan,
+  SessionType,
+} from "../domain/metrics/types";
+
+export type {
+  Availability,
+  AvailabilityRecord,
+  Convocation,
+  MatchRecord,
+  SessionPlan,
+  SessionType,
+} from "../domain/metrics/types";
 
 export const ACTIVE_WEEK_ID = 18;
 export const ACTIVE_SESSION = 2;
 
-export type Availability = "COMPLETO" | "MODIFICADO" | "RECUPERACIÓN" | "NO DISPONIBLE" | "AUSENTE";
 export type AlertWorkflow = "NUEVA" | "REVISADA" | "EN SEGUIMIENTO" | "CERRADA";
-export type Convocation = "TITULAR" | "SUPLENTE" | "NO CONVOCADO";
-export type SessionType = "Recuperación" | "Gimnasio" | "Campo" | "Técnico" | "Táctico" | "Físico" | "Compensatorio" | "Activación" | "Partido" | "Otro";
 export type PainZone = "Cabeza/cuello" | "Hombro" | "Espalda" | "Cadera" | "Aductor" | "Cuádriceps" | "Isquios" | "Rodilla" | "Gemelo" | "Tobillo" | "Pie" | "Otra";
 export type PainLimitation = "No" | "Algo" | "Sí";
 
-export type AvailabilityRecord = { weekId: number; playerId: string; value: Availability; note: string };
-export type SessionPlan = {
-  key: string;
-  weekId: number;
-  session: number;
-  name: string;
-  date: string;
-  time: string;
-  md: string;
-  type: SessionType;
-  plannedDuration: number;
-  targetRpe: number;
-  notes: string;
-  closed: boolean;
-};
-export type MatchRecord = {
-  key: string;
-  weekId: number;
-  playerId: string;
-  opponent: string;
-  venue: "LOCAL" | "VISITANTE";
-  date: string;
-  convocation: Convocation;
-  minutes: number | null;
-  rpe: number | null;
-  observation: string;
-  compensatory: boolean;
-  compensatoryMinutes: number;
-  compensatoryRpe: number | null;
-};
 export type PainRecord = { id: string; weekId: number; playerId: string; date: string; zone: PainZone; intensity: number; limitation: PainLimitation; note: string };
 export type AlertRecord = { id: string; weekId: number; playerId: string; status: AlertWorkflow; note: string; updatedAt: string; history: string[] };
 

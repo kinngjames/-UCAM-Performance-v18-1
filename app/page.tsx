@@ -5,6 +5,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CALENDAR, INITIAL_THRESHOLDS } from "./data";
 import {
+  BASELINE_MINIMUM,
+  BASELINE_WINDOW,
+} from "../domain/metrics/constants";
+import type {
+  Attendance,
+  Availability,
+  AvailabilityRecord,
+  Convocation,
+  MatchRecord,
+  PlayerMetric,
+  RosterPlayer,
+  SessionPlan,
+  SessionRecord,
+  Signal,
+  Status,
+  Thresholds,
+  WellbeingRecord,
+} from "../domain/metrics/types";
+import {
   classifyLoadCompleteness,
   completeEffortProduct,
   compliancePercent,
@@ -15,7 +34,6 @@ import {
   personalBaseline,
   standardDeviation as sd,
   summarizeLoadCoverage,
-  type LoadCompleteness,
   zScore,
 } from "../lib/metrics";
 import {
@@ -23,14 +41,9 @@ import {
   ACTIVE_WEEK_ID,
   type AlertRecord,
   type AlertWorkflow,
-  type Availability,
-  type AvailabilityRecord,
-  type Convocation,
-  type MatchRecord,
   type PainLimitation,
   type PainRecord,
   type PainZone,
-  type SessionPlan,
   seedAlerts,
   seedAvailability,
   seedMatches,
@@ -39,13 +52,6 @@ import {
   seedSessions,
   seedWellbeing,
 } from "./phase2-data";
-
-type Attendance =
-  | "ENTRENÓ"
-  | "DESCANSO"
-  | "LESIONADO"
-  | "AUSENTE"
-  | "SIN DATO";
 type AppMode = "staff" | "player";
 type StaffPage =
   | "home"
@@ -64,7 +70,6 @@ type SessionWorkspaceView =
   | "match"
   | "wellbeing";
 type TeamSignalFilter = "all" | "sleep" | "fatigue" | "pain" | "pending";
-type Status = "OK" | "VIGILAR" | "REVISAR" | "INCOMPLETO" | "SIN DATOS";
 type MetricKey =
   | "rpe"
   | "load"
@@ -75,98 +80,6 @@ type MetricKey =
   | "stress";
 type DetailTab = "summary" | "load" | "wellbeing" | "history" | "report";
 
-type RosterPlayer = {
-  id: string;
-  name: string;
-  number: number;
-  position: string;
-  birthDate: string;
-  dominantFoot: string;
-  notes: string;
-  accessActive: boolean;
-  active: boolean;
-};
-
-type SessionRecord = {
-  key: string;
-  weekId: number;
-  session: number;
-  playerId: string;
-  attendance: Attendance;
-  rpe: number | null;
-  minutes: number | null;
-  incident: string;
-  note: string;
-};
-type WellbeingRecord = {
-  weekId: number;
-  playerId: string;
-  sleep: number | null;
-  mood: number | null;
-  fatigue: number | null;
-  pain: number | null;
-  stress: number | null;
-  notes: string;
-};
-type Thresholds = typeof INITIAL_THRESHOLDS;
-type Signal = {
-  key: string;
-  label: string;
-  data: string;
-  reference: string;
-  difference: string;
-  explanation: string;
-  action: string;
-  severity: "watch" | "review" | "info";
-};
-type PlayerMetric = {
-  weekId: number;
-  playerId: string;
-  availability: Availability;
-  avgRpe: number | null;
-  trainingLoad: number;
-  matchLoad: number;
-  compensatoryLoad: number;
-  load: number;
-  plannedTrainingLoad: number;
-  plannedTotalLoad: number;
-  trainingMinutes: number;
-  matchMinutes: number | null;
-  minutes: number;
-  sleep: number | null;
-  mood: number | null;
-  fatigue: number | null;
-  pain: number | null;
-  stress: number | null;
-  trained: number;
-  completed: number;
-  rpeExpected: number;
-  rpeCompleted: number;
-  wellbeingDone: boolean;
-  pending: number;
-  compliance: number;
-  streak: number;
-  chronic: number | null;
-  ewma: number | null;
-  ratio: number | null;
-  monotony: number | null;
-  strain: number | null;
-  zRpe: number | null;
-  zSleep: number | null;
-  personalRpe: number | null;
-  personalSleep: number | null;
-  rpeRange: [number, number] | null;
-  sleepRange: [number, number] | null;
-  matchRpe: number | null;
-  convocation: Convocation;
-  status: Status;
-  availabilityKnown: boolean;
-  loadCompleteness: LoadCompleteness;
-  expectedLoadEfforts: number;
-  completedLoadEfforts: number;
-  reasons: string[];
-  signals: Signal[];
-};
 
 const STATUS_META: Record<Status, { icon: string; label: string }> = {
   OK: { icon: "✓", label: "OK" },
@@ -483,15 +396,15 @@ function buildMetrics(
       const daily = [...sessionLoads, matchLoad, compensatoryLoad, 0];
       const { monotony, strain } = monotonyAndStrain(daily);
       const avgRpe = mean(trained.map((item) => item.rpe));
-      const baselineRows = history.slice(-8);
+      const baselineRows = history.slice(-BASELINE_WINDOW);
       const priorRpe = baselineRows
         .map((item) => item.avgRpe)
         .filter((value): value is number => value != null);
       const priorSleep = baselineRows
         .map((item) => item.sleep)
         .filter((value): value is number => value != null);
-      const rpeBaseline = personalBaseline(priorRpe, 5);
-      const sleepBaseline = personalBaseline(priorSleep, 5);
+      const rpeBaseline = personalBaseline(priorRpe, BASELINE_MINIMUM);
+      const sleepBaseline = personalBaseline(priorSleep, BASELINE_MINIMUM);
       const personalRpe = rpeBaseline?.mean ?? null;
       const personalSleep = sleepBaseline?.mean ?? null;
       const rpeSd = rpeBaseline?.sd ?? sd(priorRpe);

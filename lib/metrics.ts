@@ -1,3 +1,5 @@
+import type { LoadCompleteness } from "../domain/metrics/types";
+
 export function completeEffortProduct(rpe: number, minutes: number): number;
 export function completeEffortProduct(
   rpe: number | null | undefined,
@@ -27,12 +29,6 @@ export function loadForCompleteEffort(
   const product = completeEffortProduct(rpe, minutes);
   return product == null ? null : Math.round(product);
 }
-
-export type LoadCompleteness =
-  | "COMPLETE"
-  | "PARTIAL"
-  | "NO_EXPOSURE"
-  | "NO_DATA";
 
 export const classifyLoadCompleteness = ({
   expectedEfforts,
