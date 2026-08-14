@@ -1,3 +1,4 @@
+import { RPE_MIN_MEANINGFUL_DELTA } from "./constants";
 import { formatSignalNumber } from "./format";
 import type {
   RecordCompleteness,
@@ -87,7 +88,13 @@ export const deriveMetricSignals = ({
       action: "Revisar zona, limitación y evolución.",
       severity: "review",
     });
-  if (zRpe != null && zRpe >= thresholds.zScore)
+  if (
+    zRpe != null &&
+    zRpe >= thresholds.zScore &&
+    avgRpe != null &&
+    personalRpe != null &&
+    avgRpe - personalRpe >= RPE_MIN_MEANINGFUL_DELTA
+  )
     signals.push({
       key: "rpe-z",
       label: "RPE por encima de su comportamiento habitual",

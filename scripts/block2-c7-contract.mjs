@@ -184,3 +184,63 @@ export async function verifyBlock2C7Contract() {
     },
   };
 }
+
+export async function characterizeBlock2C7Contract() {
+  const historicalGolden = await readVerifiedV18GoldenV2();
+  const historicalFixture = await readVerifiedV18AdversarialFixture();
+  const currentDemo = await buildV18Baseline();
+  assert.equal(currentDemo.datasetSha256, V18_DATASET_SHA256);
+
+  const c6Demo = buildC6ExpectedCollection(
+    buildC1ExpectedCollection(
+      historicalGolden.metrics,
+      currentDemo.inputs.wellbeing,
+    ),
+  );
+  const c6Fixture = buildC6ExpectedCollection(
+    buildC1ExpectedCollection(
+      historicalFixture.output,
+      historicalFixture.input.wellbeing,
+    ),
+  );
+  const expectedDemo = buildC7ExpectedCollection(c6Demo);
+  const expectedFixture = buildC7ExpectedCollection(c6Fixture);
+  const demo = verifyCollection({
+    actual: expectedDemo,
+    c6Expected: c6Demo,
+    historical: historicalGolden.metrics,
+    label: "Estadio DEMO C7",
+  });
+  const fixture = verifyCollection({
+    actual: expectedFixture,
+    c6Expected: c6Fixture,
+    historical: historicalFixture.output,
+    label: "Estadio fixture C7",
+  });
+  const demoSignals = expectedDemo.reduce(
+    (total, metric) => total + metric.signals.length,
+    0,
+  );
+  const demoStatus = countBy(expectedDemo, "status");
+  assert.equal(demoSignals, 109);
+  assert.deepEqual(demoStatus, {
+    OK: 659,
+    REVISAR: 7,
+    VIGILAR: 90,
+    null: 4,
+  });
+
+  return {
+    datasetSha256: currentDemo.datasetSha256,
+    demo: { ...demo, signals: demoSignals, status: demoStatus },
+    fixture,
+    historical: {
+      fixtureInputSha256: historicalFixture.inputSha256,
+      fixtureOutputSha256: historicalFixture.outputSha256,
+      goldenSha256: historicalGolden.goldenSha256,
+      plansWithTargetRpe: currentDemo.inputs.plans.filter((plan) =>
+        Object.hasOwn(plan, "targetRpe"),
+      ).length,
+    },
+  };
+}

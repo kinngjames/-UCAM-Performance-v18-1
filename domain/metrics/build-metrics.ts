@@ -8,7 +8,6 @@ import {
   personalBaseline,
   registrationPending,
   round,
-  standardDeviation as sd,
   wellbeingExpectedForAvailability,
   zScore,
 } from "./primitives";
@@ -163,8 +162,8 @@ export function buildMetrics({
       const sleepBaseline = personalBaseline(priorSleep, BASELINE_MINIMUM);
       const personalRpe = rpeBaseline?.mean ?? null;
       const personalSleep = sleepBaseline?.mean ?? null;
-      const rpeSd = rpeBaseline?.sd ?? sd(priorRpe);
-      const sleepSd = sleepBaseline?.sd ?? sd(priorSleep);
+      const rpeSd = rpeBaseline?.sd ?? 0;
+      const sleepSd = sleepBaseline?.sd ?? 0;
       const zRpe = zScore(avgRpe, rpeBaseline);
       const zSleep = zScore(weekly?.sleep, sleepBaseline);
       const rpeExpected = trained.length;

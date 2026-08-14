@@ -73,10 +73,20 @@ export const meanValue = (values: Array<number | null | undefined>) => {
 export const standardDeviation = (values: number[]) => {
   if (values.length < 2) return 0;
   const average = meanValue(values) ?? 0;
-  // Population SD: this describes exactly the observed personal-history window.
+  // Population SD remains available for descriptive calculations such as monotony.
   return Math.sqrt(
     values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
       values.length,
+  );
+};
+
+export const sampleStandardDeviation = (values: number[]) => {
+  if (values.length < 2) return null;
+  const average = meanValue(values);
+  if (average == null) return null;
+  return Math.sqrt(
+    values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
+      (values.length - 1),
   );
 };
 
@@ -90,7 +100,8 @@ export const personalBaseline = (
   );
   if (valid.length < minimumRecords) return null;
   const mean = meanValue(valid)!;
-  const sd = standardDeviation(valid);
+  const sd = sampleStandardDeviation(valid);
+  if (sd == null) return null;
   return { mean, range: [mean - sd, mean + sd] as [number, number], sd };
 };
 

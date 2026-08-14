@@ -90,7 +90,7 @@ test("la media ignora ausencias sin convertirlas en cero", async () => {
   assert.equal(meanValue([2, Number.NaN, 4, Number.POSITIVE_INFINITY]), 3);
 });
 
-test("la desviación estándar conserva el contrato poblacional N", async () => {
+test("la SD poblacional permanece aislada de los baselines personales", async () => {
   const { standardDeviation } = await metricsPromise;
   assert.equal(standardDeviation([]), 0);
   assert.equal(standardDeviation([4]), 0);
@@ -98,6 +98,16 @@ test("la desviación estándar conserva el contrato poblacional N", async () => 
   assert.ok(
     Math.abs(standardDeviation([1, 2, 3]) - Math.sqrt(2 / 3)) <
       Number.EPSILON,
+  );
+});
+
+test("la SD muestral usa n−1 y no estima con una observación", async () => {
+  const { sampleStandardDeviation } = await metricsPromise;
+  assert.equal(sampleStandardDeviation([]), null);
+  assert.equal(sampleStandardDeviation([4]), null);
+  assert.equal(sampleStandardDeviation([4, 4, 4]), 0);
+  assert.ok(
+    Math.abs(sampleStandardDeviation([1, 2, 3]) - 1) < Number.EPSILON,
   );
 });
 
@@ -115,14 +125,21 @@ test("el baseline exige cinco registros y conserva históricos discontinuos", as
   );
   assert.ok(baseline);
   assert.equal(baseline.mean, 7.2);
-  assert.ok(Math.abs(baseline.sd - Math.sqrt(0.02)) < 1e-12);
+  assert.ok(Math.abs(baseline.sd - Math.sqrt(0.025)) < 1e-12);
   assert.deepEqual(baseline.range, [
     baseline.mean - baseline.sd,
     baseline.mean + baseline.sd,
   ]);
-  assert.ok(Math.abs(zScore(7.4, baseline) - Math.sqrt(2)) < 1e-12);
+  assert.ok(Math.abs(zScore(7.4, baseline) - Math.sqrt(1.6)) < 1e-12);
   assert.equal(zScore(null, baseline), null);
   assert.equal(zScore(7, personalBaseline([7, 7, 7, 7, 7], 5)), null);
+  assert.equal(personalBaseline([7], 1), null);
+
+  const finiteOnly = personalBaseline(
+    [7, Number.NaN, 7.2, Number.POSITIVE_INFINITY, 7.4, 7.1, 7.3],
+    5,
+  );
+  assert.deepEqual(finiteOnly, baseline);
 });
 
 test("C1 mantiene pending como recuento administrativo", async () => {
@@ -224,7 +241,7 @@ test("C6 mantiene VIGILAR cuando existe señal deportiva y pending es mayor que 
   });
   const result = deriveMetricSignals({
     avgRpe: 6.5,
-    personalRpe: 6.1,
+    personalRpe: 6,
     personalSleep: null,
     recordCompleteness,
     sleepSd: 0,
@@ -239,6 +256,35 @@ test("C6 mantiene VIGILAR cuando existe señal deportiva y pending es mayor que 
     "RPE por encima de su comportamiento habitual",
   ]);
   assert.equal(result.status, "VIGILAR");
+});
+
+test("C4 aplica el delta RPE inclusivo de 0,5 además del z-score", async () => {
+  const { deriveMetricSignals, RPE_MIN_MEANINGFUL_DELTA } =
+    await metricsPromise;
+  const thresholds = emptyBuildInput([{ id: 1 }]).thresholds;
+  const derive = ({ avgRpe, personalRpe, zRpe }) =>
+    deriveMetricSignals({
+      avgRpe,
+      personalRpe,
+      personalSleep: null,
+      recordCompleteness: "COMPLETE",
+      sleepSd: 0,
+      thresholds,
+      weekly: undefined,
+      zRpe,
+    });
+
+  assert.equal(RPE_MIN_MEANINGFUL_DELTA, 0.5);
+  assert.deepEqual(derive({ avgRpe: 6.49, personalRpe: 6, zRpe: 3 }).signals, []);
+  assert.deepEqual(
+    derive({ avgRpe: 6.5, personalRpe: 6, zRpe: 1.5 }).signals.map(
+      (signal) => signal.key,
+    ),
+    ["rpe-z"],
+  );
+  assert.deepEqual(derive({ avgRpe: 6.49, personalRpe: 6, zRpe: 3 }).signals, []);
+  assert.deepEqual(derive({ avgRpe: 6.5, personalRpe: 6, zRpe: 1.49 }).signals, []);
+  assert.deepEqual(derive({ avgRpe: 5.5, personalRpe: 6, zRpe: 3 }).signals, []);
 });
 
 test("C6 permite que dolor voluntario REVISAR gane a NOT_EXPECTED", async () => {
@@ -364,7 +410,6 @@ test("producción consume el dominio central sin copias inline", async () => {
     "monotonyAndStrain",
     "personalBaseline",
     "registrationPending",
-    "standardDeviation as sd",
     "wellbeingExpectedForAvailability",
     "zScore",
   ]) {
@@ -389,6 +434,7 @@ test("producción consume el dominio central sin copias inline", async () => {
   assert.doesNotMatch(page, /\bloadForEffort\b/);
   assert.doesNotMatch(engine, /\bloadForEffort\b/);
   assert.doesNotMatch(orchestrator, /\bloadForEffort\b/);
+  assert.doesNotMatch(orchestrator, /standardDeviation as sd/);
   assert.doesNotMatch(
     orchestrator,
     /\bnextEwma\b|plannedTrainingLoad|plannedMatchLoad|\bchronic\b|\bewma\b|\bratio\b/,

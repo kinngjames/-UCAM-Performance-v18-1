@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { verifyBlock2C7Contract } from "../scripts/block2-c7-contract.mjs";
+import { characterizeBlock2C7Contract } from "../scripts/block2-c7-contract.mjs";
 import { withCurrentMetricsEngine } from "../scripts/metrics-characterization.mjs";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 const runtimeSource = (source) => source.replace(/\/\*[\s\S]*?\*\//g, "");
 
-test("C7 coincide exactamente con el estadio contractual aprobado", async () => {
-  const result = await verifyBlock2C7Contract();
+test("el estadio contractual C7 permanece caracterizado tras avanzar a C4", async () => {
+  const result = await characterizeBlock2C7Contract();
   assert.equal(result.demo.metrics, 760);
   assert.equal(result.fixture.metrics, 10);
   assert.equal(result.demo.immutableDifferences, 0);

@@ -1,6 +1,6 @@
 # Contrato de métricas
 
-Este documento describe el contrato vigente en UCAM Performance v18.1 hasta C7. Cualquier cambio de fórmula requiere tests de caracterización, revisión de producto y actualización simultánea de este documento.
+Este documento describe el contrato vigente en UCAM Performance v18.1 hasta C4. Cualquier cambio de fórmula requiere tests de caracterización, revisión de producto y actualización simultánea de este documento.
 
 ## Convenciones
 
@@ -8,7 +8,8 @@ Este documento describe el contrato vigente en UCAM Performance v18.1 hasta C7. 
 - **Semana/jornada actual:** la seleccionada en el contexto de la aplicación.
 - **Dato válido:** número finito. `null`, `undefined` y registro ausente son **sin dato**, no cero.
 - **Media:** media aritmética de valores válidos exclusivamente.
-- **Desviación estándar:** poblacional, divisor `N`.
+- **Desviación estándar poblacional:** divisor `N`; se conserva para describir el vector observado de monotonía mientras esa métrica siga activa.
+- **Desviación estándar muestral:** divisor `n−1`; se usa exclusivamente en los baselines personales de RPE y sueño para estimar su variabilidad subyacente.
 - **Redondeo:** cargas por esfuerzo se redondean al entero más cercano; valores de UI se formatean sin falsa precisión.
 
 ## Carga por esfuerzo
@@ -114,12 +115,12 @@ con un RPE objetivo, no estima carga y no genera comparaciones plan-real.
 
 ```text
 media_personal = media(valores_previos)
-SD_personal = SD_poblacional(valores_previos)
+SD_personal = sqrt(Σ(valor − media_personal)² / (n − 1))
 rango_habitual = [media_personal − SD, media_personal + SD]
 diferencia = valor_actual − media_personal
 ```
 
-Si hay menos de 5 registros: “Referencia personal aún no disponible”. No se inventa interpretación.
+Si hay menos de 5 registros: “Referencia personal aún no disponible”. Con una sola observación no existe estimación de SD. Si `SD = 0`, el rango puede existir pero el z-score es `null`. No se inventa interpretación.
 
 ## Z-score
 
@@ -136,6 +137,16 @@ z = (valor_actual − media_personal) / SD_personal
 - RPE de entrenamiento: promedio de RPE válidos de sesiones entrenadas.
 - Puede combinarse con contexto de partido en visualizaciones, manteniendo distinción entre entrenamiento y competición.
 - Un RPE ausente no entra como cero en la media.
+- La señal `rpe-z` exige simultáneamente `zRpe >= zScore` y `RPE actual − media personal >= 0,5`.
+- `0,5` es inclusivo y se conserva como hipótesis funcional recalibrable con datos reales para evitar que diferencias pequeñas generen por sí solas una alerta. No es un MCID validado ni una conclusión clínica o fisiológica.
+
+En el fixture adversarial, la retirada de `rpe-z` en R6 (`+0,38 RPE`) y R10
+(`+0,35 RPE`) es deliberada: ambas diferencias quedan por debajo del umbral
+funcional provisional de `0,5` aprobado para evitar que diferencias pequeñas
+generen por sí solas una alerta. En R10, `pending = 1` y
+`recordCompleteness = PARTIAL` permanecen intactos; pasa a `OK` porque ya no
+existe una señal deportiva, no porque la completitud administrativa controle
+el estado.
 
 ## Bienestar
 
