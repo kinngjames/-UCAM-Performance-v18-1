@@ -29,7 +29,7 @@ Se auditaron 25 bloques de visualización activos. Los micrográficos repetidos 
 | HOY · disponibilidad | ¿Cuántos pueden entrenar y cuáles son las excepciones? | Mantener como distribución textual accionable. |
 | HOY · carga reciente | ¿Está cambiando la carga colectiva? | Sustituir línea completa por microtendencia de 6 jornadas + comparación escrita. |
 | HOY · plan/real | ¿La sesión se acerca al plan? | Mantener comparación directa sin gráfico adicional. |
-| EQUIPO · cumplimiento | ¿Faltan registros? | Mantener barra mínima con porcentaje y texto. |
+| EQUIPO · registros | ¿Faltan registros esperados? | Mostrar RPE `x/y`, bienestar `x/1` u opcional y pendientes, sin porcentaje combinado. |
 | EQUIPO · carga por fila | ¿Cómo está cada jugador respecto a sí mismo? | Eliminar sparkline duplicado; mostrar diferencia vs. 4 anteriores. |
 | JUGADORES · carga por fila | ¿La tendencia reciente es relevante? | Eliminar sparkline duplicado; mostrar dirección y etiqueta. |
 | SESIONES · cierre | ¿Qué falta para cerrar? | Mantener checklist; no añadir gráficos. |

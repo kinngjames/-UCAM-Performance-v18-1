@@ -6,7 +6,17 @@ export async function loadCurrentMetricsEngine() {
     configFile: false,
     logLevel: "silent",
     root: new URL("../", import.meta.url).pathname,
-    server: { middlewareMode: true },
+    server: {
+      middlewareMode: true,
+      watch: {
+        ignored: [
+          "**/.git/**",
+          "**/.next/**",
+          "**/.sites-runtime/**",
+          "**/dist/**",
+        ],
+      },
+    },
   });
 
   try {

@@ -18,6 +18,7 @@ type MetricSignalInput = {
   rpeCompleted: number;
   rpeExpected: number;
   wellbeingDone: boolean;
+  wellbeingExpected: 0 | 1;
   trained: number;
 };
 
@@ -38,6 +39,7 @@ export const deriveMetricSignals = ({
   rpeCompleted,
   rpeExpected,
   wellbeingDone,
+  wellbeingExpected,
   trained,
 }: MetricSignalInput) => {
   const signals: Signal[] = [];
@@ -110,7 +112,10 @@ export const deriveMetricSignals = ({
       key: "pending",
       label: "Registro incompleto",
       data: `${rpeCompleted}/${rpeExpected} RPE`,
-      reference: `Bienestar ${wellbeingDone ? "completo" : "pendiente"}`,
+      reference:
+        wellbeingExpected === 0
+          ? "Bienestar opcional"
+          : `Bienestar ${wellbeingDone ? "completo" : "pendiente"}`,
       difference: `${pending} pendiente${pending > 1 ? "s" : ""}`,
       explanation: "Solo se cuentan los RPE de las sesiones en las que entrenó.",
       action: "Solicitar los registros que faltan.",

@@ -5130,22 +5130,9 @@ textarea:focus-visible {
   font-size: 9px;
   line-height: 1.35;
 }
-.compliance-cell {
+.registration-cell {
   display: grid;
   gap: 5px;
-}
-.compliance-cell i {
-  display: block;
-  height: 4px;
-  overflow: hidden;
-  border-radius: 4px;
-  background: #e8ecea;
-}
-.compliance-cell i em {
-  display: block;
-  height: 100%;
-  border-radius: 4px;
-  background: var(--green);
 }
 
 .record-view-tabs {
@@ -7116,7 +7103,7 @@ textarea:focus-visible {
   border-radius: 9px;
   background: #f6f8fa;
 }
-.phase2-team-table.view-cards .compliance-cell {
+.phase2-team-table.view-cards .registration-cell {
   grid-column: 1/-1;
 }
 .phase2-team-table.view-cards > .phase2-team-row > strong {
@@ -7328,6 +7315,16 @@ textarea:focus-visible {
   color: #004379;
   border-color: #bfd5e5;
   background: #eaf3f9;
+}
+.player-primary-action.optional {
+  color: #23415b;
+  border: 1px solid #cbd9e4;
+  background: #f3f7fa;
+  box-shadow: none;
+}
+.player-primary-action.optional button {
+  color: #fff;
+  background: var(--ucam-blue);
 }
 .player-bottom-nav button.active,
 .mobile-scroll-nav button.active {
@@ -8103,7 +8100,7 @@ body {
   gap: 3px;
 }
 .reason-cell > small,
-.compliance-cell > small {
+.registration-cell > small {
   color: #788796;
   font-size: 8px;
 }
@@ -8432,7 +8429,7 @@ body {
     border-radius: 9px;
     background: #f6f8fa;
   }
-  .phase2-team-table.view-list .compliance-cell {
+  .phase2-team-table.view-list .registration-cell {
     grid-column: 1;
   }
   .phase2-team-table.view-list .team-load-cell {

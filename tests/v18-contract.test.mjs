@@ -90,3 +90,13 @@ test("archivar preserva histórico y retira acceso activo", async () => {
   assert.doesNotMatch(api, /DELETE FROM players/);
   assert.match(api, /SET active=1,archived_at=NULL/);
 });
+
+test("C1 mantiene el bienestar opcional accesible y persiste registros nuevos", async () => {
+  const page = runtimeSource(await read("../app/page.tsx"));
+  assert.match(page, /title: "BIENESTAR OPCIONAL"/);
+  assert.match(page, /text: "Bienestar opcional esta semana"/);
+  assert.match(page, /target: "wellbeing" as const/);
+  assert.match(page, /: \[\.\.\.current, form\]/);
+  assert.doesNotMatch(page, /\bcompliance\b/);
+  assert.doesNotMatch(page, /\bstreak\b/);
+});

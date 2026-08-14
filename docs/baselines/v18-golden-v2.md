@@ -15,8 +15,11 @@ reproducir sus bytes.
 ordenadas, arrays en orden semántico explícito, UTF-8, dos espacios, `null`
 preservado, `undefined` rechazado y LF final.
 
-El generador exige al arrancar el SHA del dataset aprobado y el locale explícito
-`es-ES`. El entorno principal usa Node `24.19.0`. ICU no se fija como dependencia
+La generación original exigía al arrancar el SHA del dataset aprobado y el locale explícito
+`es-ES`. Desde Bloque 2, `scripts/v18-golden.mjs` solo verifica el archivo
+histórico y rechaza cualquier intento de escritura; la salida actual se contrasta
+con el contrato de diferencias autorizado antes de crear un futuro golden v18.1.
+El entorno principal usa Node `24.19.0`. ICU no se fija como dependencia
 separada: el test exige la versión `78.3` y el texto real producido por
 `domain/metrics/format.ts`. La comprobación de portabilidad usa además Node `22.13.0` con locale
 ambiental `C`.

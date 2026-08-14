@@ -213,24 +213,22 @@ Umbrales DEMO actuales: RPE alto 8, sueño bajo 8 h, sueño crítico 6,5 h, áni
 - Titularidad, convocatoria y suplencia son contextos, no puntuaciones.
 - “Baja exposición” describe pocos minutos de partido; no constituye recomendación médica.
 
-## Cumplimiento
+## Registros esperados
 
 ```text
 RPE_esperados = nº sesiones con asistencia ENTRENÓ
 RPE_realizados = nº de esas sesiones con RPE válido
-bienestar_esperado = 1 por semana
-bienestar_realizado = 1 si las cinco variables existen, si no 0
-cumplimiento_% = (RPE_realizados + bienestar_realizado)
-                  / (RPE_esperados + 1) × 100
+bienestar_esperado = 1 para COMPLETO, MODIFICADO o RECUPERACIÓN
+bienestar_esperado = 0 para NO DISPONIBLE o AUSENTE
+pendientes = max(0, RPE_esperados − RPE_realizados)
+             + (bienestar_esperado = 1 y bienestar incompleto ? 1 : 0)
 ```
 
-- Se redondea al entero más cercano.
 - Descanso, lesionado o ausente no incrementan RPE esperados.
-- Denominador protegido con mínimo 1 en la función pura.
-
-### Racha
-
-Número de semanas consecutivas hacia atrás con cumplimiento 100 %. La racha termina en la primera semana incompleta.
+- RPE y bienestar se presentan por separado como oportunidades completadas/esperadas; no existe porcentaje combinado.
+- `bienestar_esperado = 0` excluye el registro del recuento administrativo, pero no bloquea el formulario ni descarta un registro voluntario válido.
+- La interfaz identifica ese caso como “Bienestar opcional esta semana” y conserva sueño, ánimo, cansancio, dolor y estrés para monitorización.
+- No existe racha ni índice sustituto derivado de estos registros.
 
 ## Tendencias
 

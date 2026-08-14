@@ -77,7 +77,7 @@ Mobile-first y deliberadamente simple:
 - Bienestar semanal: sueño, ánimo, cansancio, dolor, estrés y observaciones.
 - Dolor con zona, intensidad, limitación, nota e histórico.
 - Baseline personal, rango habitual, tendencias, z-score y análisis avanzado.
-- Cumplimiento y rachas respetando los RPE realmente esperados.
+- Registros de RPE y bienestar mostrados por separado según sus oportunidades esperadas.
 - Alertas explicables con estados y revisiones persistentes.
 - Informes preentrenamiento, semanal e individual.
 - Roles, sesiones de usuario, auditoría y persistencia D1.

@@ -1,14 +1,15 @@
 import { BASELINE_MINIMUM, BASELINE_WINDOW } from "./constants";
 import {
   classifyLoadCompleteness,
-  compliancePercent,
   loadForCompleteEffort,
   meanValue as mean,
   monotonyAndStrain,
   nextEwma,
   personalBaseline,
+  registrationPending,
   round,
   standardDeviation as sd,
+  wellbeingExpectedForAvailability,
   zScore,
 } from "./primitives";
 import { deriveMetricSignals } from "./signals";
@@ -217,12 +218,14 @@ export function buildMetrics({
             weekly.stress,
           ].every((value) => value != null),
       );
-      const pending = rpeExpected - rpeCompleted + (wellbeingDone ? 0 : 1);
-      const compliance = compliancePercent(
+      const wellbeingExpected =
+        wellbeingExpectedForAvailability(availabilityValue);
+      const pending = registrationPending({
         rpeCompleted,
         rpeExpected,
         wellbeingDone,
-      );
+        wellbeingExpected,
+      });
       const { reasons, signals, status } = deriveMetricSignals({
         weekly,
         personalSleep,
@@ -235,10 +238,9 @@ export function buildMetrics({
         rpeCompleted,
         rpeExpected,
         wellbeingDone,
+        wellbeingExpected,
         trained: trained.length,
       });
-      const previousStreak = history.at(-1)?.streak ?? 0;
-      const streak = compliance === 100 ? previousStreak + 1 : 0;
       const metric: PlayerMetric = {
         weekId: week.id,
         playerId: player.id,
@@ -267,10 +269,9 @@ export function buildMetrics({
         completed: loadRows.length,
         rpeExpected,
         rpeCompleted,
+        wellbeingExpected,
         wellbeingDone,
         pending,
-        compliance,
-        streak,
         chronic: round(chronic, 0),
         ewma: round(ewma, 0),
         ratio: round(ratio, 2),

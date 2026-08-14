@@ -153,6 +153,14 @@ const compact = (value: number | null) =>
   value == null
     ? "—"
     : value.toLocaleString("es-ES", { maximumFractionDigits: 0 });
+const rpeRegistrationText = (metric: PlayerMetric) =>
+  `RPE ${metric.rpeCompleted}/${metric.rpeExpected}`;
+const wellbeingRegistrationText = (metric: PlayerMetric) =>
+  metric.wellbeingExpected === 0
+    ? metric.wellbeingDone
+      ? "Bienestar opcional enviado"
+      : "Bienestar opcional esta semana"
+    : `Bienestar ${metric.wellbeingDone ? 1 : 0}/1`;
 const formatDate = (iso: string, long = false) =>
   new Intl.DateTimeFormat(
     "es-ES",
@@ -2392,7 +2400,7 @@ function LegacyTeamViewV16({
           <span>Disponibilidad</span>
           <span>Monitorización</span>
           <span>Motivo</span>
-          <span>Cumplimiento</span>
+          <span>Registros</span>
           <span>Carga total</span>
           <span>Partido</span>
         </div>
@@ -2443,15 +2451,13 @@ function LegacyTeamViewV16({
                   /10
                 </small>
               </span>
-              <span className="compliance-cell">
-                <b>{metric.compliance}%</b>
-                <i>
-                  <em style={{ width: `${metric.compliance}%` }} />
-                </i>
+              <span className="registration-cell">
+                <b>{rpeRegistrationText(metric)}</b>
+                <small>{wellbeingRegistrationText(metric)}</small>
                 <small>
                   {metric.pending
                     ? `${metric.pending} pendiente${metric.pending > 1 ? "s" : ""}`
-                    : "Todo al día"}
+                    : "Sin pendientes"}
                 </small>
               </span>
               <strong className="team-load-cell">
@@ -5953,7 +5959,7 @@ function LegacyPlayerDetail({
             <Kpi
               label="Minutos competitivos"
               value={current.matchMinutes == null ? "Sin dato" : `${current.matchMinutes} min`}
-              helper={`${current.compliance}% de cumplimiento · ${current.streak} sem. de racha`}
+              helper={`${rpeRegistrationText(current)} · ${wellbeingRegistrationText(current)}`}
               icon="⏱"
             />
           </div>
@@ -6639,7 +6645,7 @@ function PlayerDetail({
               <span><small>Sesiones</small><strong>{current.trained}</strong></span>
               <span><small>RPE medio</small><strong>{display(current.avgRpe)}/10</strong></span>
             </div>
-            <p>{current.convocation.toLocaleLowerCase("es-ES")} · {current.compliance}% cumplimiento</p>
+            <p>{current.convocation.toLocaleLowerCase("es-ES")} · {rpeRegistrationText(current)} · {wellbeingRegistrationText(current)}</p>
           </section>
 
           <section className="panel overview-changes">
@@ -6778,7 +6784,7 @@ function PlayerDetail({
                     </summary>
                     <div className="story-detail">
                       <div className="story-sessions">{rows.map((row) => <span key={row.key}>S{row.session} {row.attendance === "ENTRENÓ" ? row.rpe == null ? "○" : `✓ RPE ${row.rpe}` : "—"}</span>)}<span>PARTIDO · {match?.minutes == null ? "sin dato" : `${match.minutes} min`}</span></div>
-                      <dl><div><dt>Sueño</dt><dd>{display(metric.sleep)} h</dd></div><div><dt>Cansancio</dt><dd>{display(metric.fatigue)}/5</dd></div><div><dt>Dolor</dt><dd>{display(metric.pain)}/10</dd></div><div><dt>Cumplimiento</dt><dd>{metric.compliance}%</dd></div></dl>
+                      <dl><div><dt>Sueño</dt><dd>{display(metric.sleep)} h</dd></div><div><dt>Cansancio</dt><dd>{display(metric.fatigue)}/5</dd></div><div><dt>Dolor</dt><dd>{display(metric.pain)}/10</dd></div><div><dt>Registros</dt><dd>{rpeRegistrationText(metric)} · {wellbeingRegistrationText(metric)}</dd></div></dl>
                       {pain && <p className="story-event">Molestia · {pain.zone} · limita: {pain.limitation} · {pain.note || "sin observación"}</p>}
                       {alert && <p className="story-event">Revisión · {ALERT_META[alert.status].label} · {alert.note || alert.history.at(-1)}</p>}
                     </div>
@@ -6841,6 +6847,21 @@ function ReportsView({
       item.metric.status === "REVISAR" || item.metric.status === "VIGILAR",
   );
   const pending = current.filter((item) => item.metric.pending > 0);
+  const rpeExpectedTotal = current.reduce(
+    (total, item) => total + item.metric.rpeExpected,
+    0,
+  );
+  const rpeCompletedTotal = current.reduce(
+    (total, item) => total + item.metric.rpeCompleted,
+    0,
+  );
+  const wellbeingExpectedTotal = current.reduce(
+    (total, item) => total + item.metric.wellbeingExpected,
+    0,
+  );
+  const wellbeingCompletedTotal = current.filter(
+    (item) => item.metric.wellbeingExpected === 1 && item.metric.wellbeingDone,
+  ).length;
   const previousTotal = players.reduce((sum, player) => {
     const previous = metrics.get(`${Math.max(1, weekId - 1)}-${player.id}`);
     return sum + (previous?.loadCompleteness === "COMPLETE" ? previous.load : 0);
@@ -7021,14 +7042,8 @@ function ReportsView({
               </strong>
             </div>
             <div>
-              <small>Cumplimiento</small>
-              <strong>
-                {display(
-                  mean(current.map((item) => item.metric.compliance)),
-                  0,
-                )}
-                %
-              </strong>
+              <small>Registros RPE</small>
+              <strong>{rpeCompletedTotal}/{rpeExpectedTotal}</strong>
             </div>
             <div>
               <small>Alertas en seguimiento</small>
@@ -7070,9 +7085,9 @@ function ReportsView({
               icon="R"
             />
             <Kpi
-              label="Cumplimiento"
-              value={`${display(mean(current.map((item) => item.metric.compliance)), 0)}%`}
-              helper={`${review.length} necesitaron revisión`}
+              label="Registros RPE"
+              value={`${rpeCompletedTotal}/${rpeExpectedTotal}`}
+              helper={`Bienestar ${wellbeingCompletedTotal}/${wellbeingExpectedTotal}`}
               icon="◷"
             />
           </div>
@@ -7199,9 +7214,9 @@ function ReportsView({
               icon="☾"
             />
             <Kpi
-              label="Cumplimiento"
-              value={`${playerMetric.compliance}%`}
-              helper={`${playerMetric.streak} semanas de racha`}
+              label="Registros"
+              value={rpeRegistrationText(playerMetric)}
+              helper={wellbeingRegistrationText(playerMetric)}
               icon="✓"
             />
           </div>
@@ -7243,15 +7258,12 @@ function PlayerReport({
   const loadTrend = trendInfo(history, "load");
   const sleepTrend = trendInfo(history, "sleep");
   const doingWell = [
-    metric.compliance >= 95
-      ? `${metric.streak} semanas seguidas completando registros`
-      : null,
     metric.personalSleep != null &&
     metric.sleep != null &&
     metric.sleep >= metric.personalSleep
       ? "Sueño en línea con tu comportamiento habitual"
       : null,
-    metric.rpeCompleted === metric.rpeExpected
+    metric.rpeExpected > 0 && metric.rpeCompleted === metric.rpeExpected
       ? "Todos los RPE esperados están completados"
       : null,
   ].filter(Boolean) as string[];
@@ -7302,9 +7314,9 @@ function PlayerReport({
           icon="☾"
         />
         <Kpi
-          label="Cumplimiento"
-          value={`${metric.compliance}%`}
-          helper={`${metric.streak} semanas de racha`}
+          label="Registros"
+          value={rpeRegistrationText(metric)}
+          helper={wellbeingRegistrationText(metric)}
           icon="✓"
         />
       </div>
@@ -7553,17 +7565,27 @@ function PlayerHome({
         title: "REGISTRAR RPE",
         text: `Sesión ${pendingRpe.session}`,
         target: pendingRpe.session as number | "wellbeing",
+        tone: "needed" as const,
       }
-    : !metric.wellbeingDone
+    : metric.wellbeingExpected === 0 && !metric.wellbeingDone
+      ? {
+          title: "BIENESTAR OPCIONAL",
+          text: "Bienestar opcional esta semana",
+          target: "wellbeing" as const,
+          tone: "optional" as const,
+        }
+      : !metric.wellbeingDone
       ? {
           title: "COMPLETAR BIENESTAR",
           text: "Una vez esta semana",
           target: "wellbeing" as const,
+          tone: "needed" as const,
         }
       : {
           title: "TODO AL DÍA ✓",
-          text: "Has completado tus registros",
+          text: "Has completado tus registros esperados",
           target: null,
+          tone: "done" as const,
         };
   return (
     <>
@@ -7577,7 +7599,7 @@ function PlayerHome({
         <AvailabilityBadge value={metric.availability} />
       </section>
       <section
-        className={`player-primary-action ${action.title.includes("TODO") ? "done" : "needed"}`}
+        className={`player-primary-action ${action.tone}`}
       >
         <div>
           <span className="eyebrow">Tu próxima acción</span>
@@ -7657,9 +7679,9 @@ function PlayerHome({
           <strong>{display(metric.sleep)} h</strong>
         </div>
         <div>
-          <span>Cumplimiento</span>
-          <strong>{metric.compliance}%</strong>
-          <small>{metric.streak} semanas de racha</small>
+          <span>Registros</span>
+          <strong>{rpeRegistrationText(metric)}</strong>
+          <small>{wellbeingRegistrationText(metric)}</small>
         </div>
       </section>
     </>
@@ -7846,11 +7868,16 @@ function PlayerRegister({
   const saveWellbeing = () => {
     setWellbeingAttempted(true);
     if (!wellbeingComplete) return;
-    setWellbeing((current) =>
-      current.map((item) =>
-        item.weekId === weekId && item.playerId === playerId ? form : item,
-      ),
-    );
+    setWellbeing((current) => {
+      const exists = current.some(
+        (item) => item.weekId === weekId && item.playerId === playerId,
+      );
+      return exists
+        ? current.map((item) =>
+            item.weekId === weekId && item.playerId === playerId ? form : item,
+          )
+        : [...current, form];
+    });
     if ((form.pain ?? 0) > 0) {
       const pain: PainRecord = {
         id: existingPain?.id ?? `pain-${playerId}-${weekId}`,

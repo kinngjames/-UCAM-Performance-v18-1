@@ -160,10 +160,9 @@ export type PlayerMetric = {
   completed: number;
   rpeExpected: number;
   rpeCompleted: number;
+  wellbeingExpected: 0 | 1;
   wellbeingDone: boolean;
   pending: number;
-  compliance: number;
-  streak: number;
   chronic: number | null;
   ewma: number | null;
   ratio: number | null;

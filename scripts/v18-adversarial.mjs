@@ -264,20 +264,51 @@ export const readV18AdversarialInput = () =>
 export const readV18AdversarialOutput = () =>
   readFile(V18_ADVERSARIAL_OUTPUT_PATH, "utf8");
 
-export async function generateV18AdversarialFixture() {
-  const inputContents = await readV18AdversarialInput();
+export async function readVerifiedV18AdversarialFixture() {
+  const [inputContents, outputContents] = await Promise.all([
+    readV18AdversarialInput(),
+    readV18AdversarialOutput(),
+  ]);
   const input = JSON.parse(inputContents);
+  const output = JSON.parse(outputContents);
+  const canonicalInputContents = serializeCanonicalJson(input);
+  const canonicalOutputContents = serializeCanonicalJson(output);
+  if (inputContents !== canonicalInputContents) {
+    throw new Error("Fixture adversarial v18: input no canónico");
+  }
+  if (outputContents !== canonicalOutputContents) {
+    throw new Error("Fixture adversarial v18: output no canónico");
+  }
+  const inputSha256 = sha256Utf8(inputContents);
+  const outputSha256 = sha256Utf8(outputContents);
+  assertPinnedSha("input", inputSha256, V18_ADVERSARIAL_INPUT_SHA256);
+  assertPinnedSha("output", outputSha256, V18_ADVERSARIAL_OUTPUT_SHA256);
+  if (input.baseDatasetSha256 !== V18_DATASET_SHA256) {
+    throw new Error("Fixture adversarial v18: dataset base inesperado");
+  }
+  return {
+    input,
+    inputContents,
+    inputSha256,
+    output,
+    outputContents,
+    outputSha256,
+  };
+}
+
+export const generateV18AdversarialFixture =
+  readVerifiedV18AdversarialFixture;
+
+export async function runCurrentMetricsOnV18AdversarialFixture() {
+  const stored = await readVerifiedV18AdversarialFixture();
   return withCurrentMetricsEngine(({ buildMetrics, data }) => {
-    const output = executeInput(input, { buildMetrics, data });
+    const output = executeInput(stored.input, { buildMetrics, data });
     const outputContents = serializeCanonicalJson(output);
-    const inputSha256 = sha256Utf8(serializeCanonicalJson(input));
     const outputSha256 = sha256Utf8(outputContents);
-    assertPinnedSha("input", inputSha256, V18_ADVERSARIAL_INPUT_SHA256);
-    assertPinnedSha("output", outputSha256, V18_ADVERSARIAL_OUTPUT_SHA256);
     return {
-      input,
-      inputContents: serializeCanonicalJson(input),
-      inputSha256,
+      input: stored.input,
+      inputContents: stored.inputContents,
+      inputSha256: stored.inputSha256,
       output,
       outputContents,
       outputSha256,

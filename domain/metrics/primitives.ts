@@ -1,4 +1,4 @@
-import type { LoadCompleteness } from "./types";
+import type { Availability, LoadCompleteness } from "./types";
 
 export function completeEffortProduct(rpe: number, minutes: number): number;
 export function completeEffortProduct(
@@ -104,16 +104,24 @@ export const nextEwma = (
   alpha = 0.4,
 ) => (previous == null ? current : alpha * current + (1 - alpha) * previous);
 
-export const compliancePercent = (
-  completedRpe: number,
-  expectedRpe: number,
-  wellnessCompleted: boolean,
-) =>
-  Math.round(
-    ((completedRpe + (wellnessCompleted ? 1 : 0)) /
-      Math.max(1, expectedRpe + 1)) *
-      100,
-  );
+export const wellbeingExpectedForAvailability = (
+  availability: Availability,
+): 0 | 1 =>
+  availability === "NO DISPONIBLE" || availability === "AUSENTE" ? 0 : 1;
+
+export const registrationPending = ({
+  rpeCompleted,
+  rpeExpected,
+  wellbeingDone,
+  wellbeingExpected,
+}: {
+  rpeCompleted: number;
+  rpeExpected: number;
+  wellbeingDone: boolean;
+  wellbeingExpected: 0 | 1;
+}) =>
+  Math.max(0, rpeExpected - rpeCompleted) +
+  (wellbeingExpected === 1 && !wellbeingDone ? 1 : 0);
 
 export const monotonyAndStrain = (dailyLoads: number[]) => {
   const average = meanValue(dailyLoads) ?? 0;

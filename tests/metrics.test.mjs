@@ -127,14 +127,67 @@ test("el baseline exige cinco registros y conserva históricos discontinuos", as
   assert.equal(zScore(7, personalBaseline([7, 7, 7, 7, 7], 5)), null);
 });
 
-test("EWMA y cumplimiento conservan exactamente las fórmulas v18", async () => {
-  const { compliancePercent, nextEwma } = await metricsPromise;
+test("EWMA conserva exactamente la fórmula v18", async () => {
+  const { nextEwma } = await metricsPromise;
   assert.equal(nextEwma(100, null, 0.4), 100);
   assert.equal(nextEwma(200, 100, 0.4), 140);
-  assert.equal(compliancePercent(3, 3, true), 100);
-  assert.equal(compliancePercent(2, 3, false), 50);
-  assert.equal(compliancePercent(0, 0, false), 0);
-  assert.equal(compliancePercent(0, 0, true), 100);
+});
+
+test("C1 separa la expectativa de bienestar y calcula solo pendientes esperados", async () => {
+  const {
+    deriveMetricSignals,
+    registrationPending,
+    wellbeingExpectedForAvailability,
+  } = await metricsPromise;
+  assert.equal(wellbeingExpectedForAvailability("COMPLETO"), 1);
+  assert.equal(wellbeingExpectedForAvailability("MODIFICADO"), 1);
+  assert.equal(wellbeingExpectedForAvailability("RECUPERACIÓN"), 1);
+  assert.equal(wellbeingExpectedForAvailability("NO DISPONIBLE"), 0);
+  assert.equal(wellbeingExpectedForAvailability("AUSENTE"), 0);
+  assert.equal(
+    registrationPending({
+      rpeCompleted: 2,
+      rpeExpected: 4,
+      wellbeingDone: false,
+      wellbeingExpected: 1,
+    }),
+    3,
+  );
+  assert.equal(
+    registrationPending({
+      rpeCompleted: 0,
+      rpeExpected: 0,
+      wellbeingDone: false,
+      wellbeingExpected: 0,
+    }),
+    0,
+  );
+  assert.equal(
+    registrationPending({
+      rpeCompleted: 3,
+      rpeExpected: 2,
+      wellbeingDone: false,
+      wellbeingExpected: 1,
+    }),
+    1,
+  );
+  const optionalWellbeing = deriveMetricSignals({
+    avgRpe: null,
+    pending: 1,
+    personalRpe: null,
+    personalSleep: null,
+    rpeCompleted: 0,
+    rpeExpected: 1,
+    sleepSd: 0,
+    thresholds: emptyBuildInput([{ id: 1 }]).thresholds,
+    trained: 1,
+    wellbeingDone: false,
+    wellbeingExpected: 0,
+    weekly: undefined,
+    zRpe: null,
+  });
+  assert.equal(optionalWellbeing.signals[0].key, "pending");
+  assert.equal(optionalWellbeing.signals[0].reference, "Bienestar opcional");
 });
 
 test("monotonía y strain comparten la misma carga semanal", async () => {
@@ -203,12 +256,13 @@ test("producción consume el dominio central sin copias inline", async () => {
 
   assert.match(page, /buildMetrics/);
   for (const primitive of [
-    "compliancePercent",
     "meanValue as mean",
     "monotonyAndStrain",
     "nextEwma",
     "personalBaseline",
+    "registrationPending",
     "standardDeviation as sd",
+    "wellbeingExpectedForAvailability",
     "zScore",
   ]) {
     assert.match(orchestrator, new RegExp(primitive));
@@ -224,6 +278,9 @@ test("producción consume el dominio central sin copias inline", async () => {
     page,
     /Math\.round\(\s*\(\(rpeCompleted\s*\+\s*\(wellbeingDone/,
   );
+  assert.doesNotMatch(page, /\bcompliancePercent\b/);
+  assert.doesNotMatch(page, /\bcompliance\b/);
+  assert.doesNotMatch(page, /\bstreak\b/);
   assert.doesNotMatch(page, /avgRpe\s*-\s*personalRpe/);
   assert.doesNotMatch(page, /\b(?:item|row|match)\.rpe\s*\*\s*(?:item|row|match)\.minutes/);
   assert.doesNotMatch(page, /\bloadForEffort\b/);
