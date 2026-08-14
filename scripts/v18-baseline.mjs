@@ -44,6 +44,11 @@ export async function buildV18Baseline() {
       assertExplicitLocale(formatSignalNumber);
       const players = data.INITIAL_PLAYERS;
       const calendar = data.CALENDAR;
+      if (calendar.length !== 38) {
+        throw new Error(
+          `Dataset DEMO: calendar debe contener 38 jornadas; contiene ${calendar.length}`,
+        );
+      }
       const thresholds = data.INITIAL_THRESHOLDS;
       const sessions = phase2.seedSessions();
       const wellbeing = phase2.seedWellbeing();
@@ -66,7 +71,8 @@ export async function buildV18Baseline() {
       );
       assertV18DatasetSha(datasetSha256);
 
-      const metricMap = buildMetrics(
+      const metricMap = buildMetrics({
+        calendar,
         players,
         sessions,
         wellbeing,
@@ -74,7 +80,7 @@ export async function buildV18Baseline() {
         matches,
         availability,
         thresholds,
-      );
+      });
       const metrics = players.flatMap((player) =>
         calendar.map((week) => {
           const metric = metricMap.get(`${week.id}-${player.id}`);

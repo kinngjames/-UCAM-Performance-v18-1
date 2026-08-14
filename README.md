@@ -53,7 +53,7 @@ La aplicación local se sirve mediante Vite/Vinext. El binding D1 de desarrollo 
 - `app/api/`: autenticación, datos, persistencia, administración, importación y exportación.
 - `app/data.ts`: dataset histórico DEMO procedente del Excel de referencia.
 - `app/phase2-data.ts`: escenarios DEMO de disponibilidad, partidos, dolor y alertas.
-- `domain/metrics/`: tipos, primitivas, formateo contractual y reglas de señales del motor analítico.
+- `domain/metrics/`: hogar único de tipos, primitivas, formateo, señales y `buildMetrics`.
 - `lib/server/platform.ts`: autenticación, autorización, semilla DEMO, auditoría y D1.
 - `db/schema.ts`: modelo relacional de 26 tablas.
 - `drizzle/`: migración SQL versionada.

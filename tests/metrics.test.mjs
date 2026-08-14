@@ -7,6 +7,67 @@ const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 const metricsPromise = withCurrentMetricsEngine(({ domain }) => domain);
 
+const emptyBuildInput = (calendar) => ({
+  availability: [],
+  calendar,
+  matches: [],
+  plans: [],
+  players: [],
+  sessions: [],
+  thresholds: {
+    baselineWeeks: 8,
+    chronicWeeks: 4,
+    criticalSleep: 6.5,
+    highFatigue: 4,
+    highMonotony: 2,
+    highRpe: 8,
+    highStress: 4,
+    lowMood: 2,
+    lowSleep: 8,
+    relevantPain: 4,
+    zScore: 1.5,
+  },
+  wellbeing: [],
+});
+
+test("buildMetrics acepta un calendario válido", async () => {
+  const { buildMetrics } = await metricsPromise;
+  const metrics = buildMetrics(emptyBuildInput([{ id: 1 }, { id: 2 }]));
+  assert.equal(metrics.size, 0);
+});
+
+test("buildMetrics rechaza un calendario vacío", async () => {
+  const { buildMetrics } = await metricsPromise;
+  assert.throws(
+    () => buildMetrics(emptyBuildInput([])),
+    /METRICS_CALENDAR_EMPTY/,
+  );
+});
+
+test("buildMetrics rechaza un ID de calendario inválido", async () => {
+  const { buildMetrics } = await metricsPromise;
+  assert.throws(
+    () => buildMetrics(emptyBuildInput([{ id: 0 }])),
+    /METRICS_CALENDAR_INVALID_ID/,
+  );
+});
+
+test("buildMetrics rechaza IDs de calendario duplicados", async () => {
+  const { buildMetrics } = await metricsPromise;
+  assert.throws(
+    () => buildMetrics(emptyBuildInput([{ id: 1 }, { id: 1 }])),
+    /METRICS_CALENDAR_DUPLICATE_ID/,
+  );
+});
+
+test("buildMetrics rechaza un calendario desordenado", async () => {
+  const { buildMetrics } = await metricsPromise;
+  assert.throws(
+    () => buildMetrics(emptyBuildInput([{ id: 2 }, { id: 1 }])),
+    /METRICS_CALENDAR_NOT_STRICTLY_INCREASING/,
+  );
+});
+
 test("la carga solo existe con RPE y minutos completos", async () => {
   const metrics = await metricsPromise;
   assert.equal(metrics.completeEffortProduct(6.3, 61), 6.3 * 61);
@@ -133,14 +194,15 @@ test("distingue completo, parcial, sin exposición y sin datos", async () => {
   );
 });
 
-test("producción consume las seis primitivas centrales sin copias inline", async () => {
-  const [page, engine] = await Promise.all([
+test("producción consume el dominio central sin copias inline", async () => {
+  const [page, engine, orchestrator] = await Promise.all([
     read("../app/page.tsx"),
     read("../domain/metrics/primitives.ts"),
+    read("../domain/metrics/build-metrics.ts"),
   ]);
 
+  assert.match(page, /buildMetrics/);
   for (const primitive of [
-    "completeEffortProduct",
     "compliancePercent",
     "meanValue as mean",
     "monotonyAndStrain",
@@ -149,8 +211,10 @@ test("producción consume las seis primitivas centrales sin copias inline", asyn
     "standardDeviation as sd",
     "zScore",
   ]) {
-    assert.match(page, new RegExp(primitive));
+    assert.match(orchestrator, new RegExp(primitive));
   }
+  assert.match(page, /completeEffortProduct/);
+  assert.match(page, /loadForCompleteEffort/);
   assert.doesNotMatch(page, /const\s+mean\s*=/);
   assert.doesNotMatch(page, /const\s+sd\s*=/);
   assert.doesNotMatch(page, /dailyMean|dailySd/);
@@ -164,4 +228,5 @@ test("producción consume las seis primitivas centrales sin copias inline", asyn
   assert.doesNotMatch(page, /\b(?:item|row|match)\.rpe\s*\*\s*(?:item|row|match)\.minutes/);
   assert.doesNotMatch(page, /\bloadForEffort\b/);
   assert.doesNotMatch(engine, /\bloadForEffort\b/);
+  assert.doesNotMatch(orchestrator, /\bloadForEffort\b/);
 });

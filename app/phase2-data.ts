@@ -8,15 +8,6 @@ import type {
   SessionType,
 } from "../domain/metrics/types";
 
-export type {
-  Availability,
-  AvailabilityRecord,
-  Convocation,
-  MatchRecord,
-  SessionPlan,
-  SessionType,
-} from "../domain/metrics/types";
-
 export const ACTIVE_WEEK_ID = 18;
 export const ACTIVE_SESSION = 2;
 

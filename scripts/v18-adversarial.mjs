@@ -242,15 +242,16 @@ const executeInput = (input, { buildMetrics, data }) => {
       `Fixture adversarial: CALENDAR cambió (${actualCalendarSha256})`,
     );
   }
-  const metricMap = buildMetrics(
-    input.players,
-    input.sessions,
-    input.wellbeing,
-    input.plans,
-    input.matches,
-    input.availability,
-    input.thresholds,
-  );
+  const metricMap = buildMetrics({
+    calendar: data.CALENDAR,
+    players: input.players,
+    sessions: input.sessions,
+    wellbeing: input.wellbeing,
+    plans: input.plans,
+    matches: input.matches,
+    availability: input.availability,
+    thresholds: input.thresholds,
+  });
   return input.selectedMetricKeys.map((key) => {
     const metric = metricMap.get(key);
     if (!metric) throw new Error(`Fixture adversarial: falta ${key}`);

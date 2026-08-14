@@ -6,11 +6,25 @@ const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 const runtimeSource = (source) => source.replace(/\/\*[\s\S]*?\*\//g, "");
 
 test("la plantilla persistente es la única fuente de jugadores en runtime", async () => {
-  const page = runtimeSource(await read("../app/page.tsx"));
+  const [page, buildMetrics] = await Promise.all([
+    read("../app/page.tsx").then(runtimeSource),
+    read("../domain/metrics/build-metrics.ts"),
+  ]);
   assert.doesNotMatch(page, /INITIAL_PLAYERS|INITIAL_ROSTER|POSITION_GROUPS/);
   assert.match(page, /useState<RosterPlayer\[\]>\(\[\]\)/);
-  assert.match(page, /buildMetrics\(\s*activeRoster/);
-  assert.match(page, /buildMetrics\(roster,/);
+  assert.match(
+    page,
+    /buildMetrics\(\{\s*calendar: CALENDAR,\s*players: activeRoster,/,
+  );
+  assert.match(
+    page,
+    /buildMetrics\(\{\s*calendar: CALENDAR,\s*players: roster,/,
+  );
+  assert.doesNotMatch(page, /function buildMetrics/);
+  assert.equal(
+    (buildMetrics.match(/export function buildMetrics/g) ?? []).length,
+    1,
+  );
   assert.match(page, /nextRoster\.flatMap/);
   assert.match(page, /players=\{activeRoster\}/);
 });

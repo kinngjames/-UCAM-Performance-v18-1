@@ -42,8 +42,8 @@ La UI es funcional pero monolítica. La extracción de módulos debe hacerse por
 
 ### Métricas
 
-- `domain/metrics/`: hogar único de tipos, primitivas, formateo contractual y reglas de señales testeadas.
-- `buildMetrics` sigue temporalmente en `app/page.tsx` hasta completar su extracción.
+- `domain/metrics/`: hogar único de tipos, primitivas, formateo contractual, señales y `buildMetrics`.
+- Producción y los arneses golden/adversarial importan el mismo orquestador puro; el calendario entra como dependencia tipada.
 - `docs/METRICS.md` es el contrato canónico hasta completar la centralización.
 
 ### Persistencia

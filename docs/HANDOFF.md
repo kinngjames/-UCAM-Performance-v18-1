@@ -36,7 +36,7 @@ Abrir la URL local indicada por Vite. Sin un binding D1 compatible, algunas ruta
 1. Leer `AGENTS.md`, `PRODUCT.md`, `ARCHITECTURE.md`, `METRICS.md`, `TECH_DEBT.md` y `KNOWN_ISSUES.md`.
 2. Confirmar `npm ci && npm run check` sin modificar dependencias.
 3. Crear branch `chore/technical-baseline-audit`.
-4. Añadir tests de caracterización para `buildMetrics`, aislamiento de roles y mutaciones críticas.
+4. Conservar los oráculos golden/adversarial de `buildMetrics` y ampliar el aislamiento de roles con pruebas E2E.
 5. Medir bundle/renders/consultas y publicar un informe reproducible.
 6. No empezar el refactor hasta tener esos tests y mediciones.
 

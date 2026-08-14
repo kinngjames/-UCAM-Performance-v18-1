@@ -12,7 +12,6 @@ Prioridades: P0 bloquea seguridad/datos/uso; P1 alto impacto; P2 mantenibilidad 
 
 - **Monolito UI.** `app/page.tsx` supera las 10.000 líneas y concentra navegación, estado, cálculos y vistas.
 - **CSS monolítico.** `app/globals.css` supera las 13.000 líneas; existen estilos heredados y riesgo de colisiones.
-- **Orquestador métrico todavía en UI.** Tipos, primitivas y señales viven en `domain/metrics/`, pero `buildMetrics` sigue temporalmente en `app/page.tsx`.
 - **Dataset DEMO acoplado a código.** `app/data.ts` es grande y aumenta bundle/tiempo de parseo.
 - **Cobertura incompleta.** v18 incorpora pruebas de contrato estructural además de métricas/render; faltan E2E autenticados de auth/roles, fallos de red y mutaciones cruzadas.
 - **Chunk cliente grande.** El build ha advertido bundles superiores a 500 KB; medir antes de extraer/cargar de forma progresiva.
