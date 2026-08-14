@@ -33,6 +33,17 @@ carga realizada es coherentemente `756 UA` y permanece inmutable en Bloque 2.
 Como no hay carga de partido planificada en este caso, `plannedTotalLoad` replica
 el cambio derivado `600 → 1200` sin alterar el aislamiento del defecto.
 
+### Inversión del estado plan-real
+
+| Contrato | `plannedTrainingLoad` | `trainingLoad` | Variación | `planState` |
+|---|---:|---:|---:|---|
+| v18 defectuoso | 600 UA | 756 UA | `(756−600)/600 = +26 %` | `Por encima de lo previsto` |
+| Bloque 2 | 1200 UA | 756 UA | `(756−1200)/1200 = −37 %` | `Por debajo de lo previsto` |
+
+La corrección debe invertir el signo de la variación y el estado mostrado sin
+modificar la carga realizada. Esta inversión `+26 % → −37 %` y `Por encima →
+Por debajo` es criterio explícito de aceptación de C2.
+
 ## Alcance de la sensibilidad 6/6
 
 La prueba 6/6 verifica seis mutaciones esperadas, una por caso, y demuestra que
