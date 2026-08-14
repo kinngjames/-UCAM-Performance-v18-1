@@ -1,0 +1,620 @@
+{
+  "availability": [
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-STABLE",
+      "value": "COMPLETO",
+      "weekId": 1
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-STABLE",
+      "value": "COMPLETO",
+      "weekId": 2
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-STABLE",
+      "value": "COMPLETO",
+      "weekId": 3
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-STABLE",
+      "value": "COMPLETO",
+      "weekId": 4
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-STABLE",
+      "value": "COMPLETO",
+      "weekId": 5
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-STABLE",
+      "value": "COMPLETO",
+      "weekId": 6
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-EDGE",
+      "value": "COMPLETO",
+      "weekId": 1
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-EDGE",
+      "value": "COMPLETO",
+      "weekId": 2
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-EDGE",
+      "value": "COMPLETO",
+      "weekId": 3
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-EDGE",
+      "value": "COMPLETO",
+      "weekId": 4
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-EDGE",
+      "value": "COMPLETO",
+      "weekId": 5
+    },
+    {
+      "note": "Lesionado; sin exposición",
+      "playerId": "ADV-EDGE",
+      "value": "NO DISPONIBLE",
+      "weekId": 6
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-EDGE",
+      "value": "COMPLETO",
+      "weekId": 7
+    },
+    {
+      "note": "Fixture adversarial",
+      "playerId": "ADV-EDGE",
+      "value": "COMPLETO",
+      "weekId": 8
+    }
+  ],
+  "baseDatasetSha256": "2d30cadd2469c1a6e4c3eef2331a92bf424795ff50826d319a2b1c57150a509b",
+  "calendarSha256": "011ff320da0e79c1969f1ba4c958e73eccbebd28bf82a77acb1a949052b1504e",
+  "caseMetricKeys": {
+    "C1": "6-ADV-EDGE",
+    "C2": "7-ADV-EDGE",
+    "C3": "5-ADV-EDGE",
+    "C4": "6-ADV-STABLE",
+    "C5": "6-ADV-STABLE",
+    "C6": "8-ADV-EDGE"
+  },
+  "matches": [
+    {
+      "compensatory": true,
+      "compensatoryMinutes": 30,
+      "compensatoryRpe": 5,
+      "convocation": "NO CONVOCADO",
+      "date": "2026-09-19",
+      "key": "6-ADV-STABLE",
+      "minutes": 0,
+      "observation": "Sin minutos; trabajo compensatorio",
+      "opponent": "Fixture adversarial",
+      "playerId": "ADV-STABLE",
+      "rpe": null,
+      "venue": "LOCAL",
+      "weekId": 6
+    }
+  ],
+  "plans": [
+    {
+      "closed": true,
+      "date": "2026-09-21",
+      "key": "7-1",
+      "md": "S1",
+      "name": "Sesión planificada 1",
+      "notes": "Plan de cuatro sesiones",
+      "plannedDuration": 60,
+      "session": 1,
+      "targetRpe": 5,
+      "time": "18:00",
+      "type": "Campo",
+      "weekId": 7
+    },
+    {
+      "closed": true,
+      "date": "2026-09-22",
+      "key": "7-2",
+      "md": "S2",
+      "name": "Sesión planificada 2",
+      "notes": "Plan de cuatro sesiones",
+      "plannedDuration": 60,
+      "session": 2,
+      "targetRpe": 5,
+      "time": "18:00",
+      "type": "Campo",
+      "weekId": 7
+    },
+    {
+      "closed": true,
+      "date": "2026-09-23",
+      "key": "7-3",
+      "md": "S3",
+      "name": "Sesión planificada 3",
+      "notes": "Plan de cuatro sesiones",
+      "plannedDuration": 60,
+      "session": 3,
+      "targetRpe": 5,
+      "time": "18:00",
+      "type": "Campo",
+      "weekId": 7
+    },
+    {
+      "closed": true,
+      "date": "2026-09-24",
+      "key": "7-4",
+      "md": "S4",
+      "name": "Sesión planificada 4",
+      "notes": "Plan de cuatro sesiones",
+      "plannedDuration": 60,
+      "session": 4,
+      "targetRpe": 5,
+      "time": "18:00",
+      "type": "Campo",
+      "weekId": 7
+    }
+  ],
+  "players": [
+    {
+      "accessActive": true,
+      "active": true,
+      "birthDate": "2009-01-01",
+      "dominantFoot": "DERECHA",
+      "id": "ADV-STABLE",
+      "name": "ADVERSARIAL ESTABLE",
+      "notes": "Fixture adversarial v18",
+      "number": 91,
+      "position": "MEDIO"
+    },
+    {
+      "accessActive": true,
+      "active": true,
+      "birthDate": "2009-01-01",
+      "dominantFoot": "DERECHA",
+      "id": "ADV-EDGE",
+      "name": "ADVERSARIAL CASOS",
+      "notes": "Fixture adversarial v18",
+      "number": 92,
+      "position": "MEDIO"
+    }
+  ],
+  "selectedMetricKeys": [
+    "1-ADV-STABLE",
+    "2-ADV-STABLE",
+    "3-ADV-STABLE",
+    "4-ADV-STABLE",
+    "5-ADV-STABLE",
+    "6-ADV-STABLE",
+    "5-ADV-EDGE",
+    "6-ADV-EDGE",
+    "7-ADV-EDGE",
+    "8-ADV-EDGE"
+  ],
+  "sessions": [
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-1-S1-ADV-STABLE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-STABLE",
+      "rpe": 6,
+      "session": 1,
+      "weekId": 1
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-2-S1-ADV-STABLE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-STABLE",
+      "rpe": 6.3,
+      "session": 1,
+      "weekId": 2
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-3-S1-ADV-STABLE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-STABLE",
+      "rpe": 6,
+      "session": 1,
+      "weekId": 3
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-4-S1-ADV-STABLE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-STABLE",
+      "rpe": 6.3,
+      "session": 1,
+      "weekId": 4
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-5-S1-ADV-STABLE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-STABLE",
+      "rpe": 6,
+      "session": 1,
+      "weekId": 5
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-6-S1-ADV-STABLE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-STABLE",
+      "rpe": 6.5,
+      "session": 1,
+      "weekId": 6
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-6-S2-ADV-STABLE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-STABLE",
+      "rpe": 6.5,
+      "session": 2,
+      "weekId": 6
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-6-S3-ADV-STABLE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-STABLE",
+      "rpe": 6.5,
+      "session": 3,
+      "weekId": 6
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-6-S4-ADV-STABLE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-STABLE",
+      "rpe": 6.5,
+      "session": 4,
+      "weekId": 6
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-1-S1-ADV-EDGE",
+      "minutes": 166.66666666666666,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": 6,
+      "session": 1,
+      "weekId": 1
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-2-S1-ADV-EDGE",
+      "minutes": 158.73015873015873,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": 6.3,
+      "session": 1,
+      "weekId": 2
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-3-S1-ADV-EDGE",
+      "minutes": 166.66666666666666,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": 6,
+      "session": 1,
+      "weekId": 3
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-4-S1-ADV-EDGE",
+      "minutes": 158.73015873015873,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": 6.3,
+      "session": 1,
+      "weekId": 4
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-5-S1-ADV-EDGE",
+      "minutes": 163.33333333333334,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": 6,
+      "session": 1,
+      "weekId": 5
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-5-S2-ADV-EDGE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": null,
+      "session": 2,
+      "weekId": 5
+    },
+    {
+      "attendance": "LESIONADO",
+      "incident": "",
+      "key": "ADV-6-S1-ADV-EDGE",
+      "minutes": null,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": null,
+      "session": 1,
+      "weekId": 6
+    },
+    {
+      "attendance": "LESIONADO",
+      "incident": "",
+      "key": "ADV-6-S2-ADV-EDGE",
+      "minutes": null,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": null,
+      "session": 2,
+      "weekId": 6
+    },
+    {
+      "attendance": "LESIONADO",
+      "incident": "",
+      "key": "ADV-6-S3-ADV-EDGE",
+      "minutes": null,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": null,
+      "session": 3,
+      "weekId": 6
+    },
+    {
+      "attendance": "LESIONADO",
+      "incident": "",
+      "key": "ADV-6-S4-ADV-EDGE",
+      "minutes": null,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": null,
+      "session": 4,
+      "weekId": 6
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-7-S1-ADV-EDGE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": 6.3,
+      "session": 1,
+      "weekId": 7
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-7-S2-ADV-EDGE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": 6.3,
+      "session": 2,
+      "weekId": 7
+    },
+    {
+      "attendance": "AUSENTE",
+      "incident": "",
+      "key": "ADV-7-S3-ADV-EDGE",
+      "minutes": null,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": null,
+      "session": 3,
+      "weekId": 7
+    },
+    {
+      "attendance": "AUSENTE",
+      "incident": "",
+      "key": "ADV-7-S4-ADV-EDGE",
+      "minutes": null,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": null,
+      "session": 4,
+      "weekId": 7
+    },
+    {
+      "attendance": "ENTRENÓ",
+      "incident": "",
+      "key": "ADV-8-S1-ADV-EDGE",
+      "minutes": 60,
+      "note": "",
+      "playerId": "ADV-EDGE",
+      "rpe": 6.5,
+      "session": 1,
+      "weekId": 8
+    }
+  ],
+  "thresholds": {
+    "baselineWeeks": 8,
+    "chronicWeeks": 4,
+    "criticalSleep": 6.5,
+    "highFatigue": 4,
+    "highMonotony": 2,
+    "highRpe": 8,
+    "highStress": 4,
+    "lowMood": 2,
+    "lowSleep": 8,
+    "relevantPain": 4,
+    "zScore": 1.5
+  },
+  "wellbeing": [
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-STABLE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 1
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-STABLE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 2
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-STABLE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 3
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-STABLE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 4
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-STABLE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 5
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-STABLE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 6
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-EDGE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 1
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-EDGE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 2
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-EDGE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 3
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-EDGE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 4
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-EDGE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 5
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-EDGE",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 7
+    },
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "",
+      "pain": 0,
+      "playerId": "ADV-EDGE",
+      "sleep": 8,
+      "stress": null,
+      "weekId": 8
+    }
+  ]
+}
