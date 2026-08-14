@@ -1,6 +1,6 @@
 # Contrato de métricas
 
-Este documento describe el contrato vigente en UCAM Performance v18. Cualquier cambio de fórmula requiere tests de caracterización, revisión de producto y actualización simultánea de este documento.
+Este documento describe el contrato vigente en UCAM Performance v18.1 hasta C7. Cualquier cambio de fórmula requiere tests de caracterización, revisión de producto y actualización simultánea de este documento.
 
 ## Convenciones
 
@@ -69,51 +69,11 @@ media_carga = media(carga_total de jugadores COMPLETE)
 
 Siempre se presenta junto a `completos · parciales · sin exposición · sin datos`. Nunca se imputa cero a `PARTIAL` o `NO_DATA`.
 
-## Planificación vs realizado
-
-### Sesión prevista individual
-
-```text
-carga_prevista_sesión = duración_prevista × RPE_objetivo × factor_disponibilidad
-```
-
-Factores DEMO actuales:
-
-| Disponibilidad | Factor |
-| --- | ---: |
-| COMPLETO | 1,00 |
-| MODIFICADO | 0,68 |
-| RECUPERACIÓN | 0,50 |
-| NO DISPONIBLE / AUSENTE | 0,00 |
-
-### Partido previsto individual
-
-Suposiciones DEMO actuales: titular 540 UA, suplente 140 UA y no convocado 0 UA. Son convenciones de demostración, no una fórmula universal; deben convertirse en configuración/plan explícito antes de producción.
-
-```text
-diferencia_UA = carga_real − carga_prevista
-diferencia_% = diferencia_UA / carga_prevista × 100
-```
-
-- Si `carga_prevista = 0`, no se calcula porcentaje.
-- La diferencia es contexto de planificación, no alerta médica.
-- La media de plan se calcula sobre exactamente la misma cohorte `COMPLETE` que la media realizada.
-
 ## Medias y cambios
 
 ### Semana anterior
 
 Valor de la jornada inmediatamente anterior de la misma temporada, si existe.
-
-### Media reciente / carga crónica descriptiva
-
-```text
-media_4_semanas = media(cargas_totales de las 4 semanas anteriores)
-```
-
-- Excluye la semana actual.
-- Usa solo semanas válidas disponibles.
-- Cada punto semanal conserva su cobertura. La UI usa un marcador de plan por semana, no una línea continua entre planes.
 
 ### Variación semanal
 
@@ -122,17 +82,6 @@ variación_% = (actual − anterior) / anterior × 100
 ```
 
 - No se calcula si falta cualquiera de los valores o si el anterior es cero.
-
-## EWMA
-
-```text
-EWMA_t = α × carga_t + (1 − α) × EWMA_(t−1)
-α = 0,4
-```
-
-- La primera carga válida inicia la serie.
-- Unidad: UA.
-- Indicador descriptivo de carga suavizada; no predictor clínico.
 
 ## Monotonía y strain
 
@@ -150,15 +99,11 @@ strain = carga_total_semanal × monotonía
 - Si `SD = 0`, monotonía y strain son `sin dato`.
 - Son métricas avanzadas y no dominan HOY ni el resumen del jugador.
 
-## Ratio de carga
+## Duración operativa de sesión
 
-```text
-ratio_carga = carga_actual / media_4_semanas_previas
-```
-
-- No se calcula si la media previa no existe o es cero.
-- Se presenta únicamente como **indicador descriptivo de cambio de carga**.
-- Prohibido etiquetarlo como zona segura, riesgo o predictor de lesión.
+`plannedDuration` conserva exclusivamente la duración definida por el Staff. Se
+usa como valor por defecto al crear o completar registros en lote. No se combina
+con un RPE objetivo, no estima carga y no genera comparaciones plan-real.
 
 ## Baseline personal
 

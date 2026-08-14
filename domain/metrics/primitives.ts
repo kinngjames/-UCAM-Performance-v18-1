@@ -102,12 +102,6 @@ export const zScore = (
     ? null
     : (value - baseline.mean) / baseline.sd;
 
-export const nextEwma = (
-  current: number,
-  previous: number | null,
-  alpha = 0.4,
-) => (previous == null ? current : alpha * current + (1 - alpha) * previous);
-
 export const wellbeingExpectedForAvailability = (
   availability: Availability,
 ): 0 | 1 =>

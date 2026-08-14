@@ -247,7 +247,6 @@ const executeInput = (input, { buildMetrics, data }) => {
     players: input.players,
     sessions: input.sessions,
     wellbeing: input.wellbeing,
-    plans: input.plans,
     matches: input.matches,
     availability: input.availability,
     thresholds: input.thresholds,

@@ -38,7 +38,7 @@ Se auditaron 25 bloques de visualización activos. Los micrográficos repetidos 
 | CARGA · plan/real actual | ¿Se cumplió el plan? | Mantener barras comparables + diferencia absoluta y porcentual. |
 | CARGA · evolución colectiva | ¿Cómo se construyó la carga? | Mantener y mejorar: barras apiladas + plan, selección táctil/teclado y móvil específico. |
 | CARGA · origen por jugador | ¿Qué compone la carga individual? | Mantener microbarra en tabla ordenable. |
-| CARGA · avanzado | ¿Qué aportan EWMA/monotonía/strain/ratio? | Mantener como tabla lazy bajo demanda; sin gráficos. |
+| CARGA · avanzado | ¿Qué aportan monotonía y strain? | Mantener como tabla lazy bajo demanda; sin gráficos. |
 | EVOLUCIÓN · matriz | ¿Quién y qué está cambiando? | Eliminar 5 sparklines por jugador; sustituir por valor + dirección + etiqueta. |
 | FICHA · origen actual | ¿Qué parte es entrenamiento y competición? | Mantener barra apilada compacta. |
 | FICHA · plan/real | ¿Cuál es la diferencia actual? | Mantener comparación directa. |

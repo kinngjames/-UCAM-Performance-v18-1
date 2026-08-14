@@ -17,7 +17,7 @@ No añadir módulos importantes antes de completar las fases 1–12.
 ## 3. Carga — perfeccionamiento
 
 - Validación matemática cruzada.
-- Unificar planificado-real, exposición y series.
+- Consolidar exposición y series con contratos explícitos de dato faltante.
 - Convertir supuestos DEMO en configuración explícita.
 
 ## 4. Sesiones — optimización operativa

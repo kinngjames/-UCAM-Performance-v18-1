@@ -365,10 +365,9 @@ export async function POST(request: Request) {
           );
         const session = Number(row.session);
         const plannedDuration = num(row.plannedDuration, 0, 240) as number;
-        const targetRpe = num(row.targetRpe, 0, 10) as number;
         await db
           .prepare(
-            "UPDATE training_sessions SET session_name=?,date=?,time=?,md_context=?,session_type=?,planned_duration=?,planned_rpe=?,planned_load=?,notes=?,status=?,updated_at=? WHERE id=? AND team_id=?",
+            "UPDATE training_sessions SET session_name=?,date=?,time=?,md_context=?,session_type=?,planned_duration=?,notes=?,status=?,updated_at=? WHERE id=? AND team_id=?",
           )
           .bind(
             String(row.name),
@@ -377,8 +376,6 @@ export async function POST(request: Request) {
             String(row.md),
             String(row.type),
             plannedDuration,
-            targetRpe,
-            plannedDuration * targetRpe,
             String(row.notes ?? ""),
             String(row.status ?? (row.closed ? "CERRADA" : "ABIERTA")),
             now,

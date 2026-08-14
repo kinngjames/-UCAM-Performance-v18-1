@@ -32,6 +32,10 @@ import {
   STATUS_META,
   StatusBadge,
 } from "./monitoring-status";
+import {
+  applyPlannedDurationBatchDefaults,
+  toActiveSessionPlan,
+} from "./session-plan";
 import { display } from "./ui-format";
 import {
   ACTIVE_SESSION,
@@ -135,6 +139,22 @@ const METRICS: Record<
     goodDirection: "down",
   },
 };
+const ACTIVE_THRESHOLD_KEYS: Array<keyof Thresholds> = [
+  "highRpe",
+  "lowSleep",
+  "lowMood",
+  "highFatigue",
+  "relevantPain",
+  "highStress",
+  "criticalSleep",
+  "zScore",
+  "baselineWeeks",
+  "highMonotony",
+];
+const toActiveThresholds = (source: Record<string, unknown>): Thresholds =>
+  Object.fromEntries(
+    ACTIVE_THRESHOLD_KEYS.map((key) => [key, Number(source[key])]),
+  ) as Thresholds;
 const UCAM_LOGO_WHITE =
   "https://www.ucam.edu/sites/default/files/public/la-universidad/identidad-visual/logos-ucam/logo-horizontal-ucam-universidad-color-letras-blanco-sin-fondo.svg";
 const UCAM_LOGO_BLUE =
@@ -195,20 +215,6 @@ const calculateAge = (birthDate: string) => {
     age -= 1;
   return age;
 };
-const planState = (actual: number, planned: number) => {
-  const variation = planned ? ((actual - planned) / planned) * 100 : 0;
-  return {
-    variation,
-    label:
-      variation > 10
-        ? "Por encima de lo previsto"
-        : variation < -10
-          ? "Por debajo de lo previsto"
-          : "En línea",
-    tone: variation > 10 ? "above" : variation < -10 ? "below" : "line",
-  };
-};
-
 function trendInfo(history: PlayerMetric[], key: MetricKey) {
   const valid = history
     .map((item) => {
@@ -656,7 +662,7 @@ function ReportTrendSummary({
               : metricValue(item, key),
           );
           const value = values.at(-1) ?? null;
-          const reference = key === "load" ? current.chronic : current.personalSleep;
+          const reference = key === "sleep" ? current.personalSleep : null;
           return (
             <article key={key}>
               <div>
@@ -675,9 +681,11 @@ function ReportTrendSummary({
                 label={`${meta.label}, últimas ocho jornadas: ${values.map((item) => item == null ? "sin dato" : display(item, key === "load" ? 0 : 1)).join(", ")}`}
               />
               <p>
-                {reference == null
-                  ? "Referencia personal aún no disponible"
-                  : `Referencia personal ${display(reference, key === "load" ? 0 : 1)}${meta.unit}`}
+                {key === "load"
+                  ? "Evolución propia de las últimas 8 jornadas"
+                  : reference == null
+                    ? "Referencia personal aún no disponible"
+                    : `Referencia personal ${display(reference, 1)}${meta.unit}`}
               </p>
             </article>
           );
@@ -1508,15 +1516,6 @@ function TodayDashboard({
     current.filter(
       (item) => item.metric.availabilityKnown && item.metric.availability === value,
     ).length;
-  const avgActual = mean(
-    trainedRows.map((item) =>
-      item.rpe != null && item.minutes != null
-        ? completeEffortProduct(item.rpe, item.minutes)
-        : null,
-    ),
-  );
-  const planned = plan.plannedDuration * plan.targetRpe;
-  const comparison = avgActual == null ? null : planState(avgActual, planned);
   const loadHistory = CALENDAR.slice(Math.max(0, weekId - 6), weekId).map(
     (calendarWeek) => ({
       label: calendarWeek.label,
@@ -1533,13 +1532,6 @@ function TodayDashboard({
   const teamLoadChange =
     teamLoad != null && previousTeamLoad
       ? ((teamLoad - previousTeamLoad) / previousTeamLoad) * 100
-      : null;
-  const teamPlannedLoad = mean(
-    current.map((item) => item.metric.plannedTotalLoad),
-  );
-  const teamPlanDifference =
-    teamLoad != null && teamPlannedLoad
-      ? ((teamLoad - teamPlannedLoad) / teamPlannedLoad) * 100
       : null;
   const currentMatch = matches.find((item) => item.weekId === weekId);
   const matchOpponent = currentMatch?.opponent.replace(/^J\d+\s*·\s*/, "");
@@ -1999,9 +1991,6 @@ function TodayDashboard({
                 {teamLoadChange == null
                   ? "Sin comparación anterior"
                   : `${teamLoadChange >= 0 ? "+" : ""}${display(teamLoadChange, 0)}% vs. jornada anterior`}
-                {teamPlanDifference == null
-                  ? ""
-                  : ` · ${teamPlanDifference >= 0 ? "+" : ""}${display(teamPlanDifference, 0)}% vs. plan`}
               </p>
             </div>
             <div className="command-load-spark">
@@ -2068,37 +2057,21 @@ function TodayDashboard({
             </button>
           </div>
           <div className="command-plan-story">
-            <span className="eyebrow">Sesión · plan vs. realidad</span>
+            <span className="eyebrow">Sesión · contexto operativo</span>
             <div>
               <p>
-                <small>Plan</small>
-                <strong>{compact(planned)} UA</strong>
-                <span>
-                  {plan.plannedDuration} min × RPE {display(plan.targetRpe)}
-                </span>
+                <small>Duración prevista</small>
+                <strong>{plan.plannedDuration} min</strong>
+                <span>{plan.type} · {plan.md}</span>
               </p>
               <b>→</b>
               <p>
-                <small>Real</small>
-                <strong>
-                  {avgActual == null
-                    ? "Pendiente"
-                    : `${compact(Math.round(avgActual))} UA`}
-                </strong>
-                <span>media por jugador</span>
+                <small>Registro actual</small>
+                <strong>{received}/{trainedRows.length} RPE</strong>
+                <span>{minutesDone}/{trainedRows.length} minutos registrados</span>
               </p>
             </div>
-            {comparison ? (
-              <p className={`plan-context plan-${comparison.tone}`}>
-                {comparison.label} · {comparison.variation >= 0 ? "+" : ""}
-                {display(comparison.variation, 0)}%
-              </p>
-            ) : (
-              <p className="plan-context">
-                Se comparará cuando lleguen los RPE.
-              </p>
-            )}
-            <small>Contexto de planificación; no es una alerta médica.</small>
+            <small>La duración se usa como valor por defecto en el registro en lote.</small>
           </div>
         </div>
       </section>
@@ -2923,10 +2896,6 @@ function TeamView({
           </div>
         )}
         {visibleRows.map(({ player, metric }) => {
-          const loadChange =
-            metric.loadCompleteness === "COMPLETE"
-              ? relativeChange(metric.load, metric.chronic)
-              : null;
           const isNormal =
             metric.status === "OK" &&
             metric.availabilityKnown &&
@@ -2973,7 +2942,6 @@ function TeamView({
               <span className="team-player-context">
                 <strong>{loadLabel}</strong>
                 <small>
-                  {loadChange == null ? "" : `${loadChange >= 0 ? "+" : ""}${display(loadChange, 0)}% · `}
                   {metric.matchMinutes == null ? "Competición sin dato" : `${metric.matchMinutes} min competición`}
                 </small>
               </span>
@@ -3764,13 +3732,7 @@ function RegisterView({
   const applyMinutesToTrained = () => {
     if (!plan) return;
     setSessions((current) =>
-      current.map((item) =>
-        item.weekId === weekId &&
-        item.session === sessionNumber &&
-        item.attendance === "ENTRENÓ"
-          ? { ...item, minutes: plan.plannedDuration }
-          : item,
-      ),
+      applyPlannedDurationBatchDefaults(current, plan),
     );
     notify(`${plan.plannedDuration} min aplicados a quienes entrenaron`);
   };
@@ -3785,16 +3747,7 @@ function RegisterView({
       ),
     );
     setSessions((current) =>
-      current.map((item) =>
-        item.weekId === weekId &&
-        item.session === sessionNumber
-          ? {
-              ...item,
-              attendance: "ENTRENÓ",
-              minutes: plan.plannedDuration,
-            }
-          : item,
-      ),
+      applyPlannedDurationBatchDefaults(current, plan, true),
     );
     setSessionFilter("focus");
     notify(
@@ -3878,13 +3831,6 @@ function RegisterView({
   const actualMinutes = mean(validMinutes);
   const actualRpe = mean(validRpe);
   const actualLoad = mean(validLoads);
-  const plannedLoad = plan
-    ? plan.plannedDuration * plan.targetRpe
-    : null;
-  const loadVariation =
-    actualLoad != null && plannedLoad
-      ? ((actualLoad - plannedLoad) / plannedLoad) * 100
-      : null;
   const canClose =
     !!plan &&
     rows.length > 0 &&
@@ -4003,17 +3949,17 @@ function RegisterView({
                 {plan.closed ? "✓ Cerrada" : canClose ? "✓ Lista para cerrar" : `● ${sessionState.toLocaleLowerCase("es-ES")}`}
               </span>
             </div>
-            <div className="session-plan-real" aria-label="Planificado frente a realizado">
+            <div className="session-plan-real" aria-label="Contexto de sesión y registro realizado">
               <div>
-                <small>PLAN</small>
-                <strong>{plan.plannedDuration} min · RPE {display(plan.targetRpe, 1)}</strong>
-                <span>{compact(plan.plannedDuration * plan.targetRpe)} UA por jugador</span>
+                <small>DURACIÓN PREVISTA</small>
+                <strong>{plan.plannedDuration} min</strong>
+                <span>Valor por defecto para el registro en lote</span>
               </div>
               <b aria-hidden="true">→</b>
               <div>
                 <small>REAL · MEDIA</small>
                 <strong>{actualMinutes == null ? "Sin minutos" : `${display(actualMinutes, 0)} min`} · {actualRpe == null ? "RPE pendiente" : `RPE ${display(actualRpe, 1)}`}</strong>
-                <span>{actualLoad == null ? "Carga pendiente" : `${compact(actualLoad)} UA`}{loadVariation == null ? "" : ` · ${loadVariation >= 0 ? "+" : ""}${display(loadVariation, 0)}% vs plan`}</span>
+                <span>{actualLoad == null ? "Carga pendiente" : `${compact(actualLoad)} UA`}</span>
               </div>
             </div>
             <details className="session-plan-editor">
@@ -4046,10 +3992,6 @@ function RegisterView({
                 <label>
                   Duración prevista
                   <input disabled={plan.closed} type="number" min="0" max="180" value={plan.plannedDuration} onChange={(event) => updatePlan("plannedDuration", Math.max(0, Math.min(180, Number(event.target.value))))} />
-                </label>
-                <label>
-                  RPE objetivo
-                  <input disabled={plan.closed} type="number" step=".5" min="0" max="10" value={plan.targetRpe} onChange={(event) => updatePlan("targetRpe", Math.max(0, Math.min(10, Number(event.target.value))))} />
                 </label>
                 <label className="plan-notes-field">
                   Observaciones
@@ -4441,7 +4383,6 @@ type TeamLoadPoint = {
   match: number | null;
   compensatory: number | null;
   actual: number | null;
-  planned: number | null;
   coverage: ReturnType<typeof summarizeLoadCoverage>;
 };
 
@@ -4482,11 +4423,9 @@ function TeamLoadChart({
   const barWidth = Math.min(42, step * 0.48);
   const maximum = Math.max(
     1,
-    ...data.flatMap((item) =>
-      [item.actual, item.planned].filter(
-        (value): value is number => value != null,
-      ),
-    ),
+    ...data
+      .map((item) => item.actual)
+      .filter((value): value is number => value != null),
   );
   const scaleMax = maximum * 1.12;
   const yFor = (value: number) =>
@@ -4503,7 +4442,7 @@ function TeamLoadChart({
           className="team-load-chart-svg"
           viewBox={`0 0 ${width} ${height}`}
           role="img"
-          aria-label="Evolución de la carga media semanal, desglosada por origen y comparada con la planificación"
+          aria-label="Evolución de la carga media semanal desglosada por origen"
         >
         {[0, 0.5, 1].map((fraction) => {
           const value = scaleMax * fraction;
@@ -4545,12 +4484,12 @@ function TeamLoadChart({
               onFocus={() => onActiveIndex(index)}
               onMouseEnter={() => onActiveIndex(index)}
               onPointerDown={() => onActiveIndex(index)}
-              aria-label={`${item.label}: ${item.actual == null ? "sin datos completos" : `total ${compact(item.actual)} UA, entrenamiento ${compact(item.training)} UA, competición ${compact(item.match)} UA, compensatoria ${compact(item.compensatory)} UA`}${item.planned == null ? ", sin planificación comparable" : `, plan ${compact(item.planned)} UA`}; cobertura ${item.coverage.complete} completos, ${item.coverage.partial} parciales, ${item.coverage.noExposure} sin exposición, ${item.coverage.noData} sin datos`}
+              aria-label={`${item.label}: ${item.actual == null ? "sin datos completos" : `total ${compact(item.actual)} UA, entrenamiento ${compact(item.training)} UA, competición ${compact(item.match)} UA, compensatoria ${compact(item.compensatory)} UA`}; cobertura ${item.coverage.complete} completos, ${item.coverage.partial} parciales, ${item.coverage.noExposure} sin exposición, ${item.coverage.noData} sin datos`}
             >
               <title>
                 {item.label} · {item.actual == null
                   ? "Sin datos"
-                  : `Entrenamiento ${compact(training)} UA · Competición ${compact(match)} UA · Compensatoria ${compact(compensatory)} UA · Total ${compact(item.actual)} UA · Plan ${compact(item.planned)} UA`}
+                  : `Entrenamiento ${compact(training)} UA · Competición ${compact(match)} UA · Compensatoria ${compact(compensatory)} UA · Total ${compact(item.actual)} UA`}
               </title>
               {index === data.length - 1 && (
                 <rect
@@ -4609,15 +4548,6 @@ function TeamLoadChart({
               >
                 {item.label}
               </text>
-              {item.planned != null && (
-                <line
-                  x1={x - barWidth / 2 - 5}
-                  y1={yFor(item.planned)}
-                  x2={x + barWidth / 2 + 5}
-                  y2={yFor(item.planned)}
-                  className="team-planned-marker"
-                />
-              )}
             </g>
           );
         })}
@@ -4632,20 +4562,19 @@ function TeamLoadChart({
               ? "El hueco no se interpreta como cero."
               : `Entrenamiento ${compact(active.training)} · competición ${compact(active.match)} · compensatoria ${compact(active.compensatory)} UA`}
           </small>
-          <em>{active.planned == null ? "Sin plan" : `Plan ${compact(active.planned)} UA`}</em>
           <span className="chart-coverage">{active.coverage.complete} completos · {active.coverage.partial} parciales · {active.coverage.noExposure} sin exposición · {active.coverage.noData} sin datos</span>
         </div>
       )}
       <div
         className="team-load-mobile"
         role="img"
-        aria-label="Últimas cinco semanas de carga media, con carga realizada por origen y referencia planificada"
+        aria-label="Últimas cinco semanas de carga media por origen"
       >
         {mobileData.map((item) => (
           <div
             key={item.label}
             className={item === mobileData.at(-1) ? "current" : ""}
-            aria-label={`${item.label}: ${item.actual == null ? "sin dato" : `total ${compact(item.actual)} UA, entrenamiento ${compact(item.training)} UA, competición ${compact(item.match)} UA, compensatoria ${compact(item.compensatory)} UA`}${item.planned == null ? ", sin plan" : `, plan ${compact(item.planned)} UA`}`}
+            aria-label={`${item.label}: ${item.actual == null ? "sin dato" : `total ${compact(item.actual)} UA, entrenamiento ${compact(item.training)} UA, competición ${compact(item.match)} UA, compensatoria ${compact(item.compensatory)} UA`}`}
           >
             <span className="team-load-mobile-week">{item.label}</span>
             <span className="team-load-mobile-track">
@@ -4667,19 +4596,9 @@ function TeamLoadChart({
                   />
                 </span>
               )}
-              {item.planned != null && (
-                <b
-                  className="team-load-mobile-plan"
-                  style={{ left: widthFor(item.planned) }}
-                  aria-hidden="true"
-                />
-              )}
             </span>
             <span className="team-load-mobile-value">
               <strong>{item.actual == null ? "—" : compact(item.actual)}</strong>
-              <small>
-                {item.planned == null ? "Sin plan" : `Plan ${compact(item.planned)}`}
-              </small>
               <em>{item.coverage.complete} completos</em>
             </span>
           </div>
@@ -4707,8 +4626,8 @@ function LoadView({
   metrics: Map<string, PlayerMetric>;
   onOpenPlayer: (id: string) => void;
   players: RosterPlayer[];
-  playerOrder: "change" | "high" | "low" | "name";
-  setPlayerOrder: (order: "change" | "high" | "low" | "name") => void;
+  playerOrder: "high" | "low" | "name";
+  setPlayerOrder: (order: "high" | "low" | "name") => void;
   advancedOpen: boolean;
   setAdvancedOpen: (open: boolean) => void;
   historyIndex: number;
@@ -4718,21 +4637,11 @@ function LoadView({
   const current = players.flatMap((player) => {
     const metric = metrics.get(`${weekId}-${player.id}`);
     if (!metric) return [];
-    const recentChange = relativeChange(
-      hasInterpretableLoad(metric) ? metric.load : null,
-      metric.chronic,
-    );
-    const plannedChange = relativeChange(
-      hasInterpretableLoad(metric) ? metric.load : null,
-      metric.plannedTotalLoad > 0 ? metric.plannedTotalLoad : null,
-    );
     return [{
       player,
       metric,
       known: hasInterpretableLoad(metric),
       completeness: metric.loadCompleteness,
-      recentChange,
-      plannedChange,
     }];
   });
   const knownCurrent = current.filter((item) => item.known);
@@ -4756,9 +4665,6 @@ function LoadView({
     minutes: knownCurrent.reduce((sum, item) => sum + item.metric.minutes, 0),
   };
   const teamMean = mean(knownCurrent.map((item) => item.metric.load));
-  const plannedMean = mean(
-    knownCurrent.map((item) => item.metric.plannedTotalLoad),
-  );
   const trainingMean = mean(
     knownCurrent.map((item) => item.metric.trainingLoad),
   );
@@ -4776,17 +4682,7 @@ function LoadView({
     );
   };
   const previousMean = teamMeanForWeek(weekId - 1);
-  const recentMean = mean(
-    CALENDAR.slice(Math.max(0, weekId - 5), Math.max(0, weekId - 1)).map(
-      (item) => teamMeanForWeek(item.id),
-    ),
-  );
   const weekChange = relativeChange(teamMean, previousMean);
-  const recentChange = relativeChange(teamMean, recentMean);
-  const planComparison =
-    teamMean != null && plannedMean != null && plannedMean > 0
-      ? planState(teamMean, plannedMean)
-      : null;
   const sourceTotal =
     (trainingMean ?? 0) + (matchMean ?? 0) + (compensatoryMean ?? 0);
   const sourceShare = (value: number | null) =>
@@ -4807,52 +4703,19 @@ function LoadView({
       match: mean(rows.map((metric) => metric.matchLoad)),
       compensatory: mean(rows.map((metric) => metric.compensatoryLoad)),
       actual: mean(rows.map((metric) => metric.load)),
-      planned: mean(rows.map((metric) => metric.plannedTotalLoad)),
       coverage: summarizeLoadCoverage(
         allWeekRows.map((metric) => metric.loadCompleteness),
       ),
     };
   });
-  const planDifference =
-    teamMean != null && plannedMean != null ? teamMean - plannedMean : null;
-  const planBarMax = Math.max(teamMean ?? 0, plannedMean ?? 0, 1);
-  const abovePlan = current.filter(
-    (item) => item.plannedChange != null && item.plannedChange > 15,
-  ).length;
-  const belowPlan = current.filter(
-    (item) => item.plannedChange != null && item.plannedChange < -15,
-  ).length;
-  const relevantChanges = current.filter(
-    (item) => item.recentChange != null && Math.abs(item.recentChange) >= 20,
-  ).length;
   const sortedPlayers = [...current].sort((a, b) => {
     if (a.known !== b.known) return a.known ? -1 : 1;
     if (playerOrder === "high") return b.metric.load - a.metric.load;
     if (playerOrder === "low") return a.metric.load - b.metric.load;
     if (playerOrder === "name")
       return a.player.name.localeCompare(b.player.name, "es");
-    const aChange = Math.max(
-      Math.abs(a.recentChange ?? 0),
-      Math.abs(a.plannedChange ?? 0),
-    );
-    const bChange = Math.max(
-      Math.abs(b.recentChange ?? 0),
-      Math.abs(b.plannedChange ?? 0),
-    );
-    return bChange - aChange;
+    return 0;
   });
-  const deltaLabel = (value: number | null) =>
-    value == null
-      ? "Sin referencia"
-      : `${value >= 0 ? "+" : ""}${display(value, 0)}%`;
-  const deltaClass = (value: number | null) =>
-    value == null
-      ? "missing"
-      : Math.abs(value) < 5
-        ? "steady"
-        : value > 0
-          ? "rise"
-          : "fall";
   const readingFor = (item: (typeof current)[number]) => {
     if (item.completeness === "PARTIAL")
       return {
@@ -4863,17 +4726,7 @@ function LoadView({
       return { className: "no-exposure", text: "Sin exposición confirmada" };
     if (item.completeness === "NO_DATA")
       return { className: "missing", text: "Sin datos suficientes" };
-    if (item.plannedChange != null && Math.abs(item.plannedChange) > 15)
-      return {
-        className: "plan",
-        text: `${item.plannedChange > 0 ? "Por encima" : "Por debajo"} del plan`,
-      };
-    if (item.recentChange != null && Math.abs(item.recentChange) >= 20)
-      return {
-        className: "change",
-        text: `Cambio ${item.recentChange > 0 ? "al alza" : "a la baja"}`,
-      };
-    return { className: "normal", text: "En su línea reciente" };
+    return { className: "normal", text: "Carga completa" };
   };
   return (
     <div className="load-workspace">
@@ -4904,10 +4757,6 @@ function LoadView({
             <div>
               <dt>Semana anterior</dt>
               <dd>{compact(previousMean)} UA</dd>
-            </div>
-            <div>
-              <dt>Referencia reciente</dt>
-              <dd>{compact(recentMean)} UA</dd>
             </div>
             <div>
               <dt>Cobertura de la media</dt>
@@ -4946,50 +4795,6 @@ function LoadView({
             </span>
           </div>
         </div>
-        <div className="load-plan-block">
-          <div className="load-block-title">
-            <span>3 · Frente al plan</span>
-            <strong className={`plan-tone-${planComparison?.tone ?? "line"}`}>
-              {planComparison?.label ?? "Sin planificación comparable"}
-            </strong>
-          </div>
-          <div className="load-plan-bars">
-            <div>
-              <span>Plan</span>
-              <i>
-                <b
-                  style={{
-                    width: `${((plannedMean ?? 0) / planBarMax) * 100}%`,
-                  }}
-                />
-              </i>
-              <strong>{compact(plannedMean)}</strong>
-            </div>
-            <div>
-              <span>Real</span>
-              <i>
-                <b
-                  style={{ width: `${((teamMean ?? 0) / planBarMax) * 100}%` }}
-                />
-              </i>
-              <strong>{compact(teamMean)}</strong>
-            </div>
-          </div>
-          <div className="load-plan-difference">
-            <span>Diferencia</span>
-            <strong>
-              {planDifference == null
-                ? "—"
-                : `${planDifference >= 0 ? "+" : ""}${compact(planDifference)} UA`}
-            </strong>
-            <small>
-              {planComparison == null
-                ? "Sin porcentaje"
-                : `${planComparison.variation >= 0 ? "+" : ""}${display(planComparison.variation, 0)}%`}
-            </small>
-          </div>
-          <p className="cohort-note">Plan y realizado usan los mismos {coverage.complete} jugadores completos.</p>
-        </div>
       </section>
 
       <section className="panel load-trend-panel">
@@ -4998,14 +4803,14 @@ function LoadView({
             <span className="eyebrow">Comparación temporal</span>
             <h2>Evolución de las últimas 8 jornadas</h2>
             <small className="panel-subtitle">
-              Media por jugador · entrenamiento, competición y plan en una sola lectura
+              Media por jugador · entrenamiento, competición y compensatoria
             </small>
           </div>
           <div className="load-reading-summary">
             <strong>
-              {recentChange == null
-                ? "Sin referencia reciente"
-                : `${recentChange >= 0 ? "+" : ""}${display(recentChange, 0)}% vs. 4 anteriores`}
+              {weekChange == null
+                ? "Sin comparación anterior"
+                : `${weekChange >= 0 ? "+" : ""}${display(weekChange, 0)}% vs. anterior`}
             </strong>
             <span>{compact(totals.minutes)} min acumulados</span>
           </div>
@@ -5019,7 +4824,6 @@ function LoadView({
           <span><i className="training" /> Entrenamiento</span>
           <span><i className="match" /> Competición</span>
           <span><i className="compensatory" /> Compensatoria</span>
-          <span><i className="planned" /> Planificado</span>
           <small>Los huecos se mantienen como “sin dato”.</small>
         </div>
       </section>
@@ -5029,15 +4833,14 @@ function LoadView({
           <div className="panel-heading">
             <div>
               <span className="eyebrow">Vista de jugadores</span>
-              <h2>Quién cambia respecto a su contexto</h2>
+              <h2>Carga por jugador</h2>
               <small className="panel-subtitle">
-                {abovePlan} por encima del plan · {belowPlan} por debajo · {relevantChanges} con cambios ≥20%
+                {coverage.complete} completos · {coverage.partial} parciales · {coverage.noExposure} sin exposición · {coverage.noData} sin datos
               </small>
             </div>
           </div>
           <div className="load-player-order" aria-label="Ordenar jugadores">
             {([
-              ["change", "Cambios"],
               ["high", "Mayor carga"],
               ["low", "Menor exposición"],
               ["name", "Jugador"],
@@ -5056,8 +4859,6 @@ function LoadView({
         <div className="load-player-head" aria-hidden="true">
           <span>Jugador</span>
           <span>Carga y origen</span>
-          <span>Vs. sus 4 anteriores</span>
-          <span>Vs. plan</span>
           <span>Lectura</span>
           <span />
         </div>
@@ -5110,16 +4911,6 @@ function LoadView({
                     />
                   </i>
                 </span>
-                <span className={`load-delta ${deltaClass(item.recentChange)}`}>
-                  <small>Vs. sus 4 anteriores</small>
-                  <strong>{deltaLabel(item.recentChange)}</strong>
-                  <em>{compact(item.metric.chronic)} UA ref.</em>
-                </span>
-                <span className={`load-delta ${deltaClass(item.plannedChange)}`}>
-                  <small>Vs. plan</small>
-                  <strong>{deltaLabel(item.plannedChange)}</strong>
-                  <em>{compact(item.metric.plannedTotalLoad)} UA plan</em>
-                </span>
                 <span className={`load-reading load-reading-${reading.className}`}>
                   {reading.text}
                 </span>
@@ -5141,20 +4932,18 @@ function LoadView({
             <h2>Análisis avanzado por jugador</h2>
           </div>
           <span className="quiet-label">
-            EWMA · monotonía · strain · ratio descriptivo
+            Monotonía · strain
           </span>
         </summary>
         {advancedOpen && (
           <div className="load-advanced-body">
             <p className="advanced-context-note">
-              Estas métricas describen la carga y su distribución. No se utilizan
+              Estas métricas describen la distribución registrada. No se utilizan
               como predictores de lesión.
             </p>
             <dl className="advanced-glossary">
-              <div><dt>EWMA</dt><dd>Carga suavizada que da más peso a las semanas recientes.</dd></div>
               <div><dt>Monotonía</dt><dd>Cuánto se parece la carga de unos días a otros.</dd></div>
               <div><dt>Strain</dt><dd>Carga semanal multiplicada por la monotonía.</dd></div>
-              <div><dt>Ratio</dt><dd>Semana actual dividida por la media de las 4 anteriores.</dd></div>
             </dl>
             <div className="load-advanced-scroll">
               <div className="load-advanced-head">
@@ -5162,11 +4951,8 @@ function LoadView({
                 <span>Entreno</span>
                 <span>Partido</span>
                 <span>Total</span>
-                <span>Media 4 sem.</span>
-                <span>EWMA</span>
                 <span>Monotonía</span>
                 <span>Strain</span>
-                <span>Ratio</span>
               </div>
               {current.map(({ player, metric, known }) => {
                 return (
@@ -5184,11 +4970,8 @@ function LoadView({
                     <strong>
                       {known ? `${compact(metric.load)} UA` : "—"}
                     </strong>
-                    <span>{compact(metric.chronic)}</span>
-                    <span>{compact(metric.ewma)}</span>
                     <span>{display(metric.monotony, 2)}</span>
                     <span>{compact(metric.strain)}</span>
-                    <span>{display(metric.ratio, 2)}</span>
                   </button>
                 );
               })}
@@ -5329,14 +5112,8 @@ function CalendarView({
                 <dd>{plan.type}</dd>
               </div>
               <div>
-                <dt>Previsto</dt>
-                <dd>
-                  {plan.plannedDuration} min × RPE {display(plan.targetRpe)}
-                </dd>
-              </div>
-              <div>
-                <dt>Carga</dt>
-                <dd>{compact(plan.plannedDuration * plan.targetRpe)} UA</dd>
+                <dt>Duración prevista</dt>
+                <dd>{plan.plannedDuration} min</dd>
               </div>
             </dl>
           </article>
@@ -5429,24 +5206,10 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
     );
   const maximum = Math.max(
     1,
-    ...visible.flatMap((item) =>
-      hasData(item) ? [item.load, item.plannedTotalLoad] : [],
-    ),
+    ...visible.flatMap((item) => (hasData(item) ? [item.load] : [])),
   );
   const scaleMax = maximum * 1.12;
   const yFor = (value: number) => top + plotHeight - (value / scaleMax) * plotHeight;
-  const planSegments: string[] = [];
-  let planPoints: string[] = [];
-  visible.forEach((item, index) => {
-    if (!hasData(item) || item.plannedTotalLoad <= 0) {
-      if (planPoints.length > 1) planSegments.push(planPoints.join(" "));
-      planPoints = [];
-      return;
-    }
-    const x = left + step * index + step / 2;
-    planPoints.push(`${x},${yFor(item.plannedTotalLoad)}`);
-  });
-  if (planPoints.length > 1) planSegments.push(planPoints.join(" "));
   const labelEvery = Math.max(1, Math.ceil(visible.length / 8));
   const mobileData = visible.slice(-6);
   const active = visible[Math.min(activeIndex, Math.max(0, visible.length - 1))];
@@ -5457,9 +5220,9 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
       <div className="panel-heading">
         <div>
           <span className="eyebrow">Evolución de carga</span>
-          <h2>Entrenamiento, competición y planificación</h2>
+          <h2>Entrenamiento y competición</h2>
           <small className="panel-subtitle">
-            Barras apiladas reales · línea dorada planificada · UA
+            Barras apiladas por origen · UA
           </small>
         </div>
         <div className="range-pills" aria-label="Periodo del gráfico">
@@ -5479,7 +5242,7 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
           className="performance-load-svg"
           viewBox={`0 0 ${width} ${height}`}
           role="img"
-          aria-label="Carga semanal de entrenamiento y competición comparada con la planificación"
+          aria-label="Carga semanal de entrenamiento y competición"
         >
           {[0, 0.5, 1].map((fraction) => {
             const value = scaleMax * fraction;
@@ -5508,10 +5271,10 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
                 onFocus={() => setActiveIndex(index)}
                 onMouseEnter={() => setActiveIndex(index)}
                 onPointerDown={() => setActiveIndex(index)}
-                aria-label={`${CALENDAR[item.weekId - 1].label}: ${hasData(item) ? `total ${compact(item.load)} UA, entrenamiento ${compact(item.trainingLoad + item.compensatoryLoad)} UA, competición ${compact(item.matchLoad)} UA` : "sin datos"}${item.plannedTotalLoad > 0 ? `, plan ${compact(item.plannedTotalLoad)} UA` : ", sin plan"}`}
+                aria-label={`${CALENDAR[item.weekId - 1].label}: ${hasData(item) ? `total ${compact(item.load)} UA, entrenamiento ${compact(item.trainingLoad + item.compensatoryLoad)} UA, competición ${compact(item.matchLoad)} UA` : "sin datos"}`}
               >
                 <title>
-                  {CALENDAR[item.weekId - 1].label} · {show ? `Entrenamiento ${compact(training)} UA · Partido ${compact(competition)} UA · Total ${compact(item.load)} UA · Plan ${compact(item.plannedTotalLoad)} UA` : "Sin datos"}
+                  {CALENDAR[item.weekId - 1].label} · {show ? `Entrenamiento ${compact(training)} UA · Partido ${compact(competition)} UA · Total ${compact(item.load)} UA` : "Sin datos"}
                 </title>
                 {index === visible.length - 1 && (
                   <rect
@@ -5559,24 +5322,6 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
               </g>
             );
           })}
-          {planSegments.map((points, index) => (
-            <polyline key={index} points={points} className="planned-load-line" />
-          ))}
-          {visible.map((item, index) =>
-            hasData(item) && item.plannedTotalLoad > 0 ? (
-              <circle
-                key={item.weekId}
-                cx={left + step * index + step / 2}
-                cy={yFor(item.plannedTotalLoad)}
-                r="3.5"
-                className="planned-load-point"
-              >
-                <title>
-                  {CALENDAR[item.weekId - 1].label} · Plan {compact(item.plannedTotalLoad)} UA
-                </title>
-              </circle>
-            ) : null,
-          )}
         </svg>
       </div>
       {active && (
@@ -5588,7 +5333,6 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
               ? `Entrenamiento ${compact(active.trainingLoad + active.compensatoryLoad)} · competición ${compact(active.matchLoad)} UA`
               : "El hueco no se interpreta como cero."}
           </small>
-          <em>{active.plannedTotalLoad > 0 ? `Plan ${compact(active.plannedTotalLoad)} UA` : "Sin plan"}</em>
         </div>
       )}
       <div className="player-load-mobile" aria-label="Carga semanal individual en las últimas seis jornadas">
@@ -5601,7 +5345,7 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
             <div
               key={item.weekId}
               className={item === mobileData.at(-1) ? "current" : ""}
-              aria-label={`${weekLabel}: ${show ? `${compact(item.load)} UA, entrenamiento ${compact(training)} UA, competición ${compact(competition)} UA` : "sin dato"}${item.plannedTotalLoad > 0 ? `, plan ${compact(item.plannedTotalLoad)} UA` : ", sin plan"}`}
+              aria-label={`${weekLabel}: ${show ? `${compact(item.load)} UA, entrenamiento ${compact(training)} UA, competición ${compact(competition)} UA` : "sin dato"}`}
             >
               <span className="player-load-mobile-week">{weekLabel}</span>
               <span className="player-load-mobile-track">
@@ -5613,17 +5357,9 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
                 ) : (
                   <i className="player-load-mobile-empty">Sin dato</i>
                 )}
-                {item.plannedTotalLoad > 0 && (
-                  <b
-                    className="player-load-mobile-plan"
-                    style={{ left: widthFor(item.plannedTotalLoad) }}
-                    aria-hidden="true"
-                  />
-                )}
               </span>
               <span className="player-load-mobile-value">
                 <strong>{show ? compact(item.load) : "—"}</strong>
-                <small>{item.plannedTotalLoad > 0 ? `Plan ${compact(item.plannedTotalLoad)}` : "Sin plan"}</small>
               </span>
             </div>
           );
@@ -5632,7 +5368,6 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
       <div className="performance-chart-legend">
         <span><i className="training" /> Entrenamiento</span>
         <span><i className="match" /> Competición</span>
-        <span><i className="planned" /> Planificado</span>
         <small>Los huecos representan semanas sin dato.</small>
       </div>
     </section>
@@ -6389,9 +6124,6 @@ function PlayerDetail({
     .map((week) => metrics.get(`${week.id}-${playerId}`))
     .filter((item): item is PlayerMetric => Boolean(item));
   const previous = history.at(-2);
-  const recentReference = mean(
-    history.slice(-5, -1).filter(hasInterpretableLoad).map((item) => item.load),
-  );
   const playerMatches = matches
     .filter((item) => item.playerId === playerId && item.weekId <= weekId)
     .sort((a, b) => a.weekId - b.weekId);
@@ -6407,10 +6139,6 @@ function PlayerDetail({
     .filter((item) => item.playerId === playerId)
     .sort((a, b) => a.weekId - b.weekId);
   const currentPain = pains.find((item) => item.weekId === weekId);
-  const weeklyPlanComparison =
-    currentLoadKnown && current.plannedTotalLoad > 0
-      ? planState(current.load, current.plannedTotalLoad)
-      : null;
   const loadChange =
     currentLoadKnown && hasInterpretableLoad(previous) && previous!.load > 0
       ? ((current.load - previous!.load) / previous!.load) * 100
@@ -6609,11 +6337,7 @@ function PlayerDetail({
           <section className="panel overview-load-main">
             <div className="overview-section-title">
               <div><span className="eyebrow">Carga esta semana</span><h2>{compact(currentLoadKnown ? current.load : null)} <small>UA</small></h2></div>
-              <span className={weeklyPlanComparison ? `plan-${weeklyPlanComparison.tone}` : ""}>
-                {weeklyPlanComparison
-                  ? `${weeklyPlanComparison.variation >= 0 ? "+" : ""}${display(weeklyPlanComparison.variation, 0)}% vs plan`
-                  : "Sin planificación"}
-              </span>
+              <span>{current.loadCompleteness === "COMPLETE" ? "Datos completos" : loadText(current)}</span>
             </div>
             <div className="load-source-bar" aria-label="Origen de la carga">
               <i
@@ -6625,7 +6349,6 @@ function PlayerDetail({
               <span><small>Entrenamiento</small><strong>{compact(current.trainingLoad + current.compensatoryLoad)} UA</strong></span>
               <span><small>Competición</small><strong>{compact(current.matchLoad)} UA</strong></span>
               <span><small>Semana anterior</small><strong>{compact(previous?.load ?? null)} UA</strong></span>
-              <span><small>Media reciente</small><strong>{compact(recentReference)} UA</strong></span>
             </div>
             <button className="text-action" onClick={() => setTab("load")}>Analizar carga y exposición →</button>
           </section>
@@ -6709,33 +6432,17 @@ function PlayerDetail({
             </div>
             <dl>
               <div><dt>Anterior</dt><dd>{compact(previous?.load ?? null)} UA</dd></div>
-              <div><dt>Media 4 sem.</dt><dd>{compact(recentReference)} UA</dd></div>
-              <div><dt>Planificada</dt><dd>{compact(current.plannedTotalLoad)} UA</dd></div>
               <div><dt>Entrenamiento</dt><dd>{compact(current.trainingLoad + current.compensatoryLoad)} UA</dd></div>
               <div><dt>Competición</dt><dd>{compact(current.matchLoad)} UA</dd></div>
             </dl>
           </section>
 
-          <div className="load-detail-grid-v7">
-            <section className="panel load-plan-v7">
-              <div className="panel-heading"><div><span className="eyebrow">Planificado vs realizado</span><h2>Diferencia directa</h2></div></div>
-              <div className="plan-comparison-bars">
-                {[{ label: "Plan", value: current.plannedTotalLoad }, { label: "Real", value: current.load }].map((item) => (
-                  <div key={item.label}><span>{item.label}</span><i><b style={{ width: `${Math.min(100, item.value / Math.max(current.load, current.plannedTotalLoad, 1) * 100)}%` }} /></i><strong>{compact(item.value)} UA</strong></div>
-                ))}
-              </div>
-              <div className={`plan-result ${weeklyPlanComparison ? `plan-${weeklyPlanComparison.tone}` : ""}`}>
-                <strong>{current.load - current.plannedTotalLoad >= 0 ? "+" : ""}{compact(current.load - current.plannedTotalLoad)} UA</strong>
-                <span>{weeklyPlanComparison ? `${weeklyPlanComparison.variation >= 0 ? "+" : ""}${display(weeklyPlanComparison.variation, 0)}% · ${weeklyPlanComparison.label}` : "Sin planificación disponible"}</span>
-              </div>
-            </section>
-            <section className="panel exposure-windows">
-              <div className="panel-heading"><div><span className="eyebrow">Exposición</span><h2>7, 14 y 28 días</h2></div></div>
-              {exposure.map((item) => (
-                <div key={item.label}><strong>{item.label}</strong><span><i /> Entreno {item.training} min</span><span><b /> Partido {item.match} min</span><em>{item.training + item.match} min</em></div>
-              ))}
-            </section>
-          </div>
+          <section className="panel exposure-windows">
+            <div className="panel-heading"><div><span className="eyebrow">Exposición</span><h2>7, 14 y 28 días</h2></div></div>
+            {exposure.map((item) => (
+              <div key={item.label}><strong>{item.label}</strong><span><i /> Entreno {item.training} min</span><span><b /> Partido {item.match} min</span><em>{item.training + item.match} min</em></div>
+            ))}
+          </section>
 
           <PlayerLoadChart history={history} />
 
@@ -6764,7 +6471,7 @@ function PlayerDetail({
 
           <details className="panel player-advanced-v7">
             <summary><span><strong>Análisis avanzado</strong><small>Segundo nivel · contexto descriptivo</small></span><b>Mostrar</b></summary>
-            <div><span>EWMA <b>{compact(current.ewma)} UA</b></span><span>Monotonía <b>{display(current.monotony, 2)}</b></span><span>Strain <b>{compact(current.strain)}</b></span><span>Z-RPE <b>{display(current.zRpe, 2)}</b></span><span>Ratio de cambio <b>{display(current.ratio, 2)}</b></span></div>
+            <div><span>Monotonía <b>{display(current.monotony, 2)}</b></span><span>Strain <b>{compact(current.strain)}</b></span><span>Z-RPE <b>{display(current.zRpe, 2)}</b></span></div>
             <p>Estas métricas aportan contexto y no predicen lesiones.</p>
           </details>
         </div>
@@ -7520,9 +7227,8 @@ function SettingsView({
             <strong>Activa</strong>
           </div>
           <p>
-            El ratio de carga se conserva únicamente como indicador secundario
-            de cambio. No se generan predicciones de lesión ni readiness scores
-            opacos.
+            Las métricas describen registros y contexto. No se generan
+            predicciones de lesión ni readiness scores opacos.
           </p>
         </aside>
       </section>
@@ -9509,8 +9215,8 @@ export default function Home() {
     "focus" | "exceptions" | "all"
   >("focus");
   const [loadOrder, setLoadOrder] = useState<
-    "change" | "high" | "low" | "name"
-  >("change");
+    "high" | "low" | "name"
+  >("high");
   const [loadAdvancedOpen, setLoadAdvancedOpen] = useState(false);
   const [loadHistoryIndex, setLoadHistoryIndex] = useState(7);
   const [playerRegisterTarget, setPlayerRegisterTarget] = useState<
@@ -9522,7 +9228,9 @@ export default function Home() {
   const [wellbeing, setWellbeing] = useState<WellbeingRecord[]>(
     seedWellbeing() as WellbeingRecord[],
   );
-  const [plans, setPlans] = useState<SessionPlan[]>(seedSessionPlans());
+  const [plans, setPlans] = useState<SessionPlan[]>(() =>
+    seedSessionPlans().map(toActiveSessionPlan),
+  );
   const [availability, setAvailability] =
     useState<AvailabilityRecord[]>(initialAvailability);
   const [matches, setMatches] = useState<MatchRecord[]>(() =>
@@ -9531,7 +9239,9 @@ export default function Home() {
   const [painRecords, setPainRecords] =
     useState<PainRecord[]>(seedPainRecords());
   const [alerts, setAlerts] = useState<AlertRecord[]>(seedAlerts());
-  const [thresholds, setThresholds] = useState<Thresholds>(INITIAL_THRESHOLDS);
+  const [thresholds, setThresholds] = useState<Thresholds>(() =>
+    toActiveThresholds(INITIAL_THRESHOLDS),
+  );
   const [activeAlertPlayer, setActiveAlertPlayer] = useState<string | null>(
     null,
   );
@@ -9558,12 +9268,11 @@ export default function Home() {
         players: activeRoster,
         sessions,
         wellbeing,
-        plans,
         matches,
         availability,
         thresholds,
       }),
-    [activeRoster, sessions, wellbeing, plans, matches, availability, thresholds],
+    [activeRoster, sessions, wellbeing, matches, availability, thresholds],
   );
   const rosterMetrics = useMemo(
     () =>
@@ -9572,12 +9281,11 @@ export default function Home() {
         players: roster,
         sessions,
         wellbeing,
-        plans,
         matches,
         availability,
         thresholds,
       }),
-    [roster, sessions, wellbeing, plans, matches, availability, thresholds],
+    [roster, sessions, wellbeing, matches, availability, thresholds],
   );
 
   const notify = (message: string) => {
@@ -9825,7 +9533,6 @@ export default function Home() {
                   md: String(row.md_context ?? ""),
                   type: String(row.session_type) as SessionPlan["type"],
                   plannedDuration: Number(row.planned_duration),
-                  targetRpe: Number(row.planned_rpe),
                   notes: String(row.notes ?? ""),
                   closed: String(row.status) === "CERRADA",
                 }
@@ -9836,12 +9543,20 @@ export default function Home() {
           Record<string, unknown>
         >;
         if (thresholdRows.length)
-          setThresholds((current) => ({
-            ...current,
-            ...Object.fromEntries(
-              thresholdRows.map((row) => [String(row.key), Number(row.value)]),
-            ),
-          }));
+          setThresholds((current) =>
+            toActiveThresholds({
+              ...current,
+              ...Object.fromEntries(
+                thresholdRows
+                  .filter((row) =>
+                    ACTIVE_THRESHOLD_KEYS.includes(
+                      String(row.key) as keyof Thresholds,
+                    ),
+                  )
+                  .map((row) => [String(row.key), Number(row.value)]),
+              ),
+            }),
+          );
       } catch (error) {
         if (live) {
           setRoster([]);

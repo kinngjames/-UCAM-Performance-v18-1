@@ -11238,7 +11238,7 @@ body {
 
 .load-command-panel {
   display: grid;
-  grid-template-columns: minmax(260px, 1.08fr) minmax(250px, 0.96fr) minmax(250px, 0.9fr);
+  grid-template-columns: minmax(260px, 1.08fr) minmax(250px, 0.96fr);
   overflow: hidden;
   border-radius: 17px;
 }
@@ -11661,7 +11661,7 @@ body {
 .load-player-head,
 .load-player-row {
   display: grid;
-  grid-template-columns: minmax(155px, 1.05fr) minmax(190px, 1.25fr) minmax(105px, 0.76fr) minmax(95px, 0.72fr) minmax(130px, 0.88fr) 18px;
+  grid-template-columns: minmax(155px, 1.05fr) minmax(190px, 1.25fr) minmax(130px, 0.88fr) 18px;
   gap: 12px;
   align-items: center;
 }
@@ -11933,10 +11933,10 @@ body {
 .load-advanced-head,
 .load-advanced-row {
   display: grid;
-  grid-template-columns: minmax(165px, 1.35fr) repeat(8, minmax(75px, 1fr));
+  grid-template-columns: minmax(165px, 1.35fr) repeat(5, minmax(75px, 1fr));
   gap: 10px;
   align-items: center;
-  min-width: 900px;
+  min-width: 650px;
 }
 
 .load-advanced-head {
@@ -11972,22 +11972,9 @@ body {
     grid-template-columns: 1fr 1fr;
   }
 
-  .load-command-main {
-    grid-column: 1 / -1;
-  }
-
-  .load-source-block {
-    border-left: 0;
-    border-top: 1px solid #e5ebf0;
-  }
-
-  .load-plan-block {
-    border-top: 1px solid #e5ebf0;
-  }
-
   .load-player-head,
   .load-player-row {
-    grid-template-columns: minmax(145px, 1fr) minmax(175px, 1.15fr) minmax(95px, 0.7fr) minmax(90px, 0.68fr) minmax(120px, 0.82fr) 16px;
+    grid-template-columns: minmax(145px, 1fr) minmax(175px, 1.15fr) minmax(120px, 0.82fr) 16px;
     gap: 9px;
   }
 }
@@ -12016,8 +12003,7 @@ body {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "identity reading"
-      "composition composition"
-      "recent plan";
+      "composition composition";
     gap: 11px 18px;
     min-height: 0;
     padding: 13px;
@@ -12032,14 +12018,6 @@ body {
 
   .load-player-composition {
     grid-area: composition;
-  }
-
-  .load-player-row > .load-delta:nth-child(3) {
-    grid-area: recent;
-  }
-
-  .load-player-row > .load-delta:nth-child(4) {
-    grid-area: plan;
   }
 
   .load-reading {
@@ -12310,8 +12288,7 @@ body {
     grid-template-areas:
       "identity identity"
       "reading reading"
-      "composition composition"
-      "recent plan";
+      "composition composition";
     gap: 10px 12px;
   }
 
@@ -12339,9 +12316,7 @@ body {
     grid-template-areas:
       "identity"
       "reading"
-      "composition"
-      "recent"
-      "plan";
+      "composition";
   }
 }
 

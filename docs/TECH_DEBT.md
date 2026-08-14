@@ -17,7 +17,6 @@ Prioridades: P0 bloquea seguridad/datos/uso; P1 alto impacto; P2 mantenibilidad 
 - **Chunk cliente grande.** El build ha advertido bundles superiores a 500 KB; medir antes de extraer/cargar de forma progresiva.
 - **Routing interno.** v18 restaura el contexto funcional con estado elevado, referencias de retorno y `sessionStorage`, pero las pantallas aún no tienen URLs estables/deep links completos.
 - **Assets de marca externos.** Logo UCAM depende de URLs remotas y de autorización/licencia.
-- **Planificación de partido hardcodeada.** 540/140 UA son supuestos DEMO y deben ser configuración o planificación explícita.
 
 ## P2
 
@@ -31,3 +30,13 @@ Prioridades: P0 bloquea seguridad/datos/uso; P1 alto impacto; P2 mantenibilidad 
 ## Regla de tratamiento
 
 No resolver varias deudas a la vez. Añadir tests de caracterización, cambiar una capa, comparar visual/funcionalmente y mantener un commit reversible.
+
+## Decisiones deliberadas de producto
+
+- **Retirada de carga planificada (v18.1 C7).** v18 garantizaba que plan y
+  realizado compartían cohorte para que su comparación fuera semánticamente
+  coherente. C7 no rompe esa garantía: retira por completo la comparación de
+  carga planificada, junto con RPE objetivo y sus derivados. La cohorte deja de
+  formar parte del producto activo y no debe restaurarse automáticamente como
+  si su ausencia fuera una regresión. La duración prevista sí permanece como
+  dato operativo para el registro en lote.

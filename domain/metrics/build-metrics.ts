@@ -5,7 +5,6 @@ import {
   loadForCompleteEffort,
   meanValue as mean,
   monotonyAndStrain,
-  nextEwma,
   personalBaseline,
   registrationPending,
   round,
@@ -54,7 +53,6 @@ export function buildMetrics({
   players,
   sessions,
   wellbeing,
-  plans,
   matches,
   availability,
   thresholds,
@@ -64,7 +62,6 @@ export function buildMetrics({
   const result = new Map<string, PlayerMetric>();
   const sessionIndex = new Map<string, SessionRecord[]>();
   const wellbeingIndex = new Map<string, BuildMetricsInput["wellbeing"][number]>();
-  const planIndex = new Map<string, BuildMetricsInput["plans"][number]>();
   const matchIndex = new Map<string, BuildMetricsInput["matches"][number]>();
   const availabilityIndex = new Map<
     string,
@@ -78,7 +75,6 @@ export function buildMetrics({
   }
   for (const row of wellbeing)
     wellbeingIndex.set(`${row.weekId}-${row.playerId}`, row);
-  for (const row of plans) planIndex.set(`${row.weekId}-${row.session}`, row);
   for (const row of matches)
     matchIndex.set(`${row.weekId}-${row.playerId}`, row);
   for (const row of availability)
@@ -86,7 +82,6 @@ export function buildMetrics({
 
   for (const player of players) {
     const history: PlayerMetric[] = [];
-    let previousEwma: number | null = null;
     for (const week of calendar) {
       const indexKey = `${week.id}-${player.id}`;
       const rows = (sessionIndex.get(indexKey) ?? []).filter(
@@ -145,41 +140,6 @@ export function buildMetrics({
         completedEfforts: completedLoadEfforts,
         explicitNoExposure,
       });
-      const availabilityFactor =
-        availabilityValue === "MODIFICADO"
-          ? 0.68
-          : availabilityValue === "RECUPERACIÓN"
-            ? 0.5
-            : ["NO DISPONIBLE", "AUSENTE"].includes(availabilityValue)
-              ? 0
-              : 1;
-      const plannedTrainingLoad = Math.round(
-        trained.reduce((sum, row) => {
-          const plan = planIndex.get(`${week.id}-${row.session}`);
-          return (
-            sum +
-            (plan
-              ? plan.plannedDuration * plan.targetRpe * availabilityFactor
-              : 0)
-          );
-        }, 0),
-      );
-      const plannedMatchLoad =
-        matchKnown && match?.convocation === "TITULAR"
-          ? 540
-          : matchKnown && match?.convocation === "SUPLENTE"
-            ? 140
-            : 0;
-      const previous4 = history
-        .filter((item) => item.loadCompleteness === "COMPLETE")
-        .slice(-4);
-      const chronic = mean(previous4.map((item) => item.load));
-      const ratio = chronic && chronic > 0 ? totalLoad / chronic : null;
-      const ewma: number | null =
-        loadCompleteness === "COMPLETE"
-          ? nextEwma(totalLoad, previousEwma, 0.4)
-          : null;
-      if (ewma != null) previousEwma = ewma;
       const sessionLoads = [1, 2, 3, 4].map((session) =>
         loadRows
           .filter((item) => item.session === session)
@@ -252,8 +212,6 @@ export function buildMetrics({
         matchLoad,
         compensatoryLoad,
         load: totalLoad,
-        plannedTrainingLoad,
-        plannedTotalLoad: plannedTrainingLoad + plannedMatchLoad,
         trainingMinutes:
           loadRows.reduce((sum, item) => sum + (item.minutes ?? 0), 0) +
           (matchKnown ? (match?.compensatoryMinutes ?? 0) : 0),
@@ -275,9 +233,6 @@ export function buildMetrics({
         wellbeingDone,
         pending,
         recordCompleteness,
-        chronic: round(chronic, 0),
-        ewma: round(ewma, 0),
-        ratio: round(ratio, 2),
         monotony: round(monotony, 2),
         strain: round(strain, 0),
         zRpe: round(zRpe, 2),

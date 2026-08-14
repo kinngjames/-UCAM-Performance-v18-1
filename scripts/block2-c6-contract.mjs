@@ -45,6 +45,9 @@ export const buildC6ExpectedMetric = (c1Metric) => {
   return expected;
 };
 
+export const buildC6ExpectedCollection = (c1Metrics) =>
+  c1Metrics.map(buildC6ExpectedMetric);
+
 const verifyCollection = ({
   actual,
   c1Expected,
@@ -238,6 +241,80 @@ export async function verifyBlock2C6Contract() {
     fixture: {
       ...fixture,
       rows: { R7: r7, R8: r8, R10: r10 },
+    },
+    historical: {
+      fixtureInputSha256: historicalFixture.inputSha256,
+      fixtureOutputSha256: historicalFixture.outputSha256,
+      goldenSha256: historicalGolden.goldenSha256,
+    },
+  };
+}
+
+export async function characterizeBlock2C6Contract() {
+  const historicalGolden = await readVerifiedV18GoldenV2();
+  const historicalFixture = await readVerifiedV18AdversarialFixture();
+  const currentDemo = await buildV18Baseline();
+  assert.equal(currentDemo.datasetSha256, V18_DATASET_SHA256);
+
+  const c1Demo = buildC1ExpectedCollection(
+    historicalGolden.metrics,
+    currentDemo.inputs.wellbeing,
+  );
+  const c1Fixture = buildC1ExpectedCollection(
+    historicalFixture.output,
+    historicalFixture.input.wellbeing,
+  );
+  const expectedDemo = buildC6ExpectedCollection(c1Demo);
+  const expectedFixture = buildC6ExpectedCollection(c1Fixture);
+  const demo = verifyCollection({
+    actual: expectedDemo,
+    c1Expected: c1Demo,
+    historical: historicalGolden.metrics,
+    label: "Estadio DEMO C6",
+  });
+  const fixture = verifyCollection({
+    actual: expectedFixture,
+    c1Expected: c1Fixture,
+    historical: historicalFixture.output,
+    label: "Estadio fixture C6",
+  });
+  const demoSignals = expectedDemo.reduce(
+    (total, metric) => total + metric.signals.length,
+    0,
+  );
+  const demoStatus = countBy(expectedDemo, "status");
+  const demoCompleteness = countBy(expectedDemo, "recordCompleteness");
+  assert.equal(demoSignals, 109);
+  assert.deepEqual(demoStatus, {
+    OK: 659,
+    REVISAR: 7,
+    VIGILAR: 90,
+    null: 4,
+  });
+  assert.deepEqual(demoCompleteness, {
+    COMPLETE: 753,
+    NOT_EXPECTED: 4,
+    PARTIAL: 3,
+  });
+
+  return {
+    datasetSha256: currentDemo.datasetSha256,
+    demo: {
+      ...demo,
+      recordCompleteness: {
+        ...demoCompleteness,
+        NO_DATA: demoCompleteness.NO_DATA ?? 0,
+      },
+      signals: demoSignals,
+      status: demoStatus,
+    },
+    fixture: {
+      ...fixture,
+      rows: {
+        R7: metricAt(expectedFixture, "ADV-EDGE", 5),
+        R8: metricAt(expectedFixture, "ADV-EDGE", 6),
+        R10: metricAt(expectedFixture, "ADV-EDGE", 8),
+      },
     },
     historical: {
       fixtureInputSha256: historicalFixture.inputSha256,

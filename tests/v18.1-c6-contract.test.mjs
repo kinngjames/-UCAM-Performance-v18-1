@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { verifyBlock2C6Contract } from "../scripts/block2-c6-contract.mjs";
+import { characterizeBlock2C6Contract } from "../scripts/block2-c6-contract.mjs";
 
-test("C6 coincide exactamente con el estadio contractual aprobado", async () => {
-  const result = await verifyBlock2C6Contract();
+test("el estadio contractual C6 permanece caracterizado tras avanzar a C7", async () => {
+  const result = await characterizeBlock2C6Contract();
   assert.equal(result.demo.metrics, 760);
   assert.equal(result.demo.immutableDifferences, 0);
   assert.equal(result.demo.unexpectedDifferences, 0);

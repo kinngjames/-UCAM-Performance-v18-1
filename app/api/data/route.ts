@@ -62,7 +62,7 @@ export async function GET(request: Request) {
       bind(alertsSql).all(),
       db
         .prepare(
-          "SELECT session_number, session_name, date, time, md_context, session_type, planned_duration, planned_rpe, notes, status FROM training_sessions WHERE week_id=? ORDER BY session_number",
+          "SELECT session_number, session_name, date, time, md_context, session_type, planned_duration, notes, status FROM training_sessions WHERE week_id=? ORDER BY session_number",
         )
         .bind(weekKey)
         .all(),

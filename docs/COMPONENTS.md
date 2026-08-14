@@ -32,7 +32,7 @@ La mayoría de componentes vive aún en `app/page.tsx`. Los nombres de esta list
 ## Sesiones
 
 - Selector compacto de jornada/sesión con fecha, MD, estado y pendientes.
-- Cabecera operativa con contexto, planificación frente a realidad y editor secundario.
+- Cabecera operativa con contexto, duración prevista y editor secundario.
 - Control de cierre persistente con minutos, RPE e incoherencias pendientes.
 - Participación unificada y acciones masivas para aplicar la normalidad una sola vez.
 - Plantilla filtrable por prioridad, excepciones o totalidad; edición inline de minutos y RPE.
@@ -44,7 +44,6 @@ La mayoría de componentes vive aún en `app/page.tsx`. Los nombres de esta list
 
 - Evolución temporal con tooltip contextual.
 - Carga entrenamiento/competición/total.
-- Planificado vs real.
 - Barras/rankings operativos.
 - Sparklines y selector de bienestar.
 

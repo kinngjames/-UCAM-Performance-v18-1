@@ -20,11 +20,12 @@ export async function loadCurrentMetricsEngine() {
   });
 
   try {
-    const [data, domain, monitoringStatus, phase2, uiFormat] = await Promise.all([
+    const [data, domain, monitoringStatus, phase2, sessionPlan, uiFormat] = await Promise.all([
       server.ssrLoadModule("/app/data.ts"),
       server.ssrLoadModule("/domain/metrics/index.ts"),
       server.ssrLoadModule("/app/monitoring-status.tsx"),
       server.ssrLoadModule("/app/phase2-data.ts"),
+      server.ssrLoadModule("/app/session-plan.ts"),
       server.ssrLoadModule("/app/ui-format.ts"),
     ]);
     return {
@@ -35,6 +36,7 @@ export async function loadCurrentMetricsEngine() {
       monitoringStatus,
       data,
       phase2,
+      sessionPlan,
       close: () => server.close(),
     };
   } catch (error) {

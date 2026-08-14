@@ -415,7 +415,7 @@ export async function ensureSeeded() {
     statements.push(
       db
         .prepare(
-          "INSERT INTO training_sessions (id, team_id, season_id, week_id, session_number, date, time, session_name, session_type, md_context, planned_duration, planned_rpe, planned_load, status, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "INSERT INTO training_sessions (id, team_id, season_id, week_id, session_number, date, time, session_name, session_type, md_context, planned_duration, status, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(
           `session-${plan.weekId}-${plan.session}`,
@@ -429,8 +429,6 @@ export async function ensureSeeded() {
           plan.type,
           plan.md,
           plan.plannedDuration,
-          plan.targetRpe,
-          plan.plannedDuration * plan.targetRpe,
           status,
           plan.notes,
           now,

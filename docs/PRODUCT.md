@@ -41,7 +41,7 @@ La navegación principal agrupa:
 - **HOY:** centro de mando diario, sesión, disponibilidad, atención, pendientes, estado colectivo y cambios recientes.
 - **EQUIPO:** una sola entrada con `Estado` como tarea frecuente y `Gestionar plantilla` como workflow administrativo secundario.
 - **SESIONES:** planificación, apertura/cierre, asistencia, minutos, RPE, participación, incidencias y partidos.
-- **CARGA:** carga de entrenamiento, competición y total; planificado vs real; evolución y métricas avanzadas bajo demanda.
+- **CARGA:** carga de entrenamiento, competición y total; evolución y métricas avanzadas defendibles bajo demanda.
 - **INFORMES:** preentrenamiento, semanal e individual.
 - **AJUSTES/ADMIN:** equipo, temporada, umbrales, marca, exportación y permisos de staff; no duplica la gestión de jugadores.
 
@@ -73,7 +73,7 @@ Mobile-first y deliberadamente simple:
 - Partidos, convocatoria, titularidad, suplencia, minutos y RPE postpartido.
 - Asistencia y disponibilidad: completo, modificado, recuperación, no disponible y ausente.
 - RPE, minutos y carga interna; entrenamiento, competición, compensatoria y total.
-- Planificación de duración/RPE/carga y comparación planificado-real.
+- Planificación operativa de la duración de sesión como valor por defecto del registro en lote.
 - Bienestar semanal: sueño, ánimo, cansancio, dolor, estrés y observaciones.
 - Dolor con zona, intensidad, limitación, nota e histórico.
 - Baseline personal, rango habitual, tendencias, z-score y análisis avanzado.

@@ -28,6 +28,5 @@ La auditoría de npm de esta baseline detecta cuatro avisos transitorios high. D
 ## No considerados defectos
 
 - `Sin dato` no se dibuja como cero.
-- ACWR/ratio no muestra zona de riesgo.
 - Alertas no diagnostican ni recomiendan tratamiento.
 - Player no ve notas internas ni información de compañeros.

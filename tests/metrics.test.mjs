@@ -11,12 +11,10 @@ const emptyBuildInput = (calendar) => ({
   availability: [],
   calendar,
   matches: [],
-  plans: [],
   players: [],
   sessions: [],
   thresholds: {
     baselineWeeks: 8,
-    chronicWeeks: 4,
     criticalSleep: 6.5,
     highFatigue: 4,
     highMonotony: 2,
@@ -125,12 +123,6 @@ test("el baseline exige cinco registros y conserva históricos discontinuos", as
   assert.ok(Math.abs(zScore(7.4, baseline) - Math.sqrt(2)) < 1e-12);
   assert.equal(zScore(null, baseline), null);
   assert.equal(zScore(7, personalBaseline([7, 7, 7, 7, 7], 5)), null);
-});
-
-test("EWMA conserva exactamente la fórmula v18", async () => {
-  const { nextEwma } = await metricsPromise;
-  assert.equal(nextEwma(100, null, 0.4), 100);
-  assert.equal(nextEwma(200, 100, 0.4), 140);
 });
 
 test("C1 mantiene pending como recuento administrativo", async () => {
@@ -370,7 +362,6 @@ test("producción consume el dominio central sin copias inline", async () => {
   for (const primitive of [
     "meanValue as mean",
     "monotonyAndStrain",
-    "nextEwma",
     "personalBaseline",
     "registrationPending",
     "standardDeviation as sd",
@@ -398,4 +389,9 @@ test("producción consume el dominio central sin copias inline", async () => {
   assert.doesNotMatch(page, /\bloadForEffort\b/);
   assert.doesNotMatch(engine, /\bloadForEffort\b/);
   assert.doesNotMatch(orchestrator, /\bloadForEffort\b/);
+  assert.doesNotMatch(
+    orchestrator,
+    /\bnextEwma\b|plannedTrainingLoad|plannedMatchLoad|\bchronic\b|\bewma\b|\bratio\b/,
+  );
+  assert.equal("nextEwma" in (await metricsPromise), false);
 });

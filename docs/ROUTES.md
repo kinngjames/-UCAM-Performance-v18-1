@@ -12,7 +12,7 @@ La UI principal usa estado de navegación interno dentro de `app/page.tsx`; las 
 | FICHA | Comprender y analizar a un jugador. | Dashboard de equipo. |
 | SESIONES / REGISTRO | Planificar, abrir, gestionar participación/minutos/RPE y cerrar. | Métricas avanzadas históricas. |
 | CALENDARIO | Jornadas, fechas, MD, sesiones y partidos. | Edición masiva fuera de contexto. |
-| CARGA | Equipo e individual: carga, origen, plan frente a real, evolución y segundo nivel. | Tareas diarias de HOY. |
+| CARGA | Equipo e individual: carga, origen, evolución y segundo nivel. | Tareas diarias de HOY. |
 | EVOLUCIÓN | Cambios comparables de plantilla y tendencias. | Detalle exhaustivo individual. |
 | INFORMES | Narrativa preentrenamiento, semanal e individual. | Dashboard duplicado. |
 | AJUSTES | Equipo, temporada, umbrales, marca y configuración. | Operación diaria. |

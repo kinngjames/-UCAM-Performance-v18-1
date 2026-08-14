@@ -88,7 +88,6 @@ export type Thresholds = {
   zScore: number;
   baselineWeeks: number;
   highMonotony: number;
-  chronicWeeks: number;
 };
 
 export type Signal = {
@@ -119,7 +118,6 @@ export type SessionPlan = {
   md: string;
   type: SessionType;
   plannedDuration: number;
-  targetRpe: number;
   notes: string;
   closed: boolean;
 };
@@ -149,8 +147,6 @@ export type PlayerMetric = {
   matchLoad: number;
   compensatoryLoad: number;
   load: number;
-  plannedTrainingLoad: number;
-  plannedTotalLoad: number;
   trainingMinutes: number;
   matchMinutes: number | null;
   minutes: number;
@@ -167,9 +163,6 @@ export type PlayerMetric = {
   wellbeingDone: boolean;
   pending: number;
   recordCompleteness: RecordCompleteness;
-  chronic: number | null;
-  ewma: number | null;
-  ratio: number | null;
   monotony: number | null;
   strain: number | null;
   zRpe: number | null;
@@ -196,7 +189,6 @@ export type BuildMetricsInput = {
   players: readonly RosterPlayer[];
   sessions: readonly SessionRecord[];
   wellbeing: readonly WellbeingRecord[];
-  plans: readonly SessionPlan[];
   matches: readonly MatchRecord[];
   availability: readonly AvailabilityRecord[];
   thresholds: Thresholds;

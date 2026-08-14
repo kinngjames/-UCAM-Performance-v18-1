@@ -40,6 +40,11 @@ La baseline usa Drizzle sobre Cloudflare D1. `db/schema.ts` es la fuente ejecuta
 
 Estados de sesión: `PLANIFICADA`, `ABIERTA`, `CERRADA`. Solo una sesión abierta/temporalmente permitida debe aceptar RPE de Player.
 
+`training_sessions.planned_rpe` y `training_sessions.planned_load` se conservan
+físicamente para no destruir histórico legacy. El contrato activo no los lee,
+expone ni actualiza. `planned_duration` permanece operativo y alimenta el valor
+por defecto del registro en lote.
+
 ## Bienestar y dolor
 
 | Entidad | Responsabilidad |

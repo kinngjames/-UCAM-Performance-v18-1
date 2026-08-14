@@ -76,7 +76,6 @@ export async function buildV18Baseline() {
         players,
         sessions,
         wellbeing,
-        plans,
         matches,
         availability,
         thresholds,
