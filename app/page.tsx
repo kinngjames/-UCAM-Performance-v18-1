@@ -6,10 +6,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CALENDAR, INITIAL_THRESHOLDS } from "./data";
 import {
   classifyLoadCompleteness,
+  completeEffortProduct,
+  compliancePercent,
   loadForCompleteEffort,
-  loadForEffort,
+  meanValue as mean,
+  monotonyAndStrain,
+  nextEwma,
+  personalBaseline,
+  standardDeviation as sd,
   summarizeLoadCoverage,
   type LoadCompleteness,
+  zScore,
 } from "../lib/metrics";
 import {
   ACTIVE_SESSION,
@@ -237,23 +244,6 @@ const positionGroup = (position: string) => {
   return "CENTROCAMPISTAS";
 };
 
-const mean = (values: Array<number | null | undefined>) => {
-  const valid = values.filter(
-    (value): value is number =>
-      typeof value === "number" && Number.isFinite(value),
-  );
-  return valid.length
-    ? valid.reduce((sum, value) => sum + value, 0) / valid.length
-    : null;
-};
-const sd = (values: number[]) => {
-  if (values.length < 2) return 0;
-  const average = mean(values) ?? 0;
-  return Math.sqrt(
-    values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
-      values.length,
-  );
-};
 const round = (value: number | null, decimals = 1) =>
   value == null ? null : Math.round(value * 10 ** decimals) / 10 ** decimals;
 const display = (value: number | null, decimals = 1) =>
@@ -395,7 +385,10 @@ function buildMetrics(
       );
       const trained = rows.filter((item) => item.attendance === "ENTRENÓ");
       const loadRows = trained.filter(
-        (item) => item.rpe != null && item.minutes != null,
+        (
+          item,
+        ): item is SessionRecord & { rpe: number; minutes: number } =>
+          item.rpe != null && item.minutes != null,
       );
       const weekly = wellbeingIndex.get(indexKey);
       const availabilityRecord = availabilityIndex.get(indexKey);
@@ -405,8 +398,7 @@ function buildMetrics(
         match && match.observation !== "__SIN_DATO__",
       );
       const trainingLoad = loadRows.reduce(
-        (sum, item) =>
-          sum + (loadForCompleteEffort(item.rpe, item.minutes) ?? 0),
+        (sum, item) => sum + loadForCompleteEffort(item.rpe, item.minutes),
         0,
       );
       const matchExpected = Boolean(
@@ -476,23 +468,20 @@ function buildMetrics(
       const ratio = chronic && chronic > 0 ? totalLoad / chronic : null;
       const ewma: number | null =
         loadCompleteness === "COMPLETE"
-          ? previousEwma == null
-            ? totalLoad
-            : 0.4 * totalLoad + 0.6 * previousEwma
+          ? nextEwma(totalLoad, previousEwma, 0.4)
           : null;
       if (ewma != null) previousEwma = ewma;
       const sessionLoads = [1, 2, 3, 4].map((session) =>
         loadRows
           .filter((item) => item.session === session)
           .reduce(
-            (sum, item) => sum + loadForEffort(item.rpe, item.minutes),
+            (sum, item) =>
+              sum + loadForCompleteEffort(item.rpe, item.minutes),
             0,
           ),
       );
       const daily = [...sessionLoads, matchLoad, compensatoryLoad, 0];
-      const dailyMean = mean(daily) ?? 0;
-      const dailySd = sd(daily);
-      const monotony = dailySd ? dailyMean / dailySd : null;
+      const { monotony, strain } = monotonyAndStrain(daily);
       const avgRpe = mean(trained.map((item) => item.rpe));
       const baselineRows = history.slice(-8);
       const priorRpe = baselineRows
@@ -501,18 +490,14 @@ function buildMetrics(
       const priorSleep = baselineRows
         .map((item) => item.sleep)
         .filter((value): value is number => value != null);
-      const personalRpe = priorRpe.length >= 5 ? mean(priorRpe) : null;
-      const personalSleep = priorSleep.length >= 5 ? mean(priorSleep) : null;
-      const rpeSd = sd(priorRpe);
-      const sleepSd = sd(priorSleep);
-      const zRpe =
-        avgRpe != null && personalRpe != null && rpeSd > 0
-          ? (avgRpe - personalRpe) / rpeSd
-          : null;
-      const zSleep =
-        weekly?.sleep != null && personalSleep != null && sleepSd > 0
-          ? (weekly.sleep - personalSleep) / sleepSd
-          : null;
+      const rpeBaseline = personalBaseline(priorRpe, 5);
+      const sleepBaseline = personalBaseline(priorSleep, 5);
+      const personalRpe = rpeBaseline?.mean ?? null;
+      const personalSleep = sleepBaseline?.mean ?? null;
+      const rpeSd = rpeBaseline?.sd ?? sd(priorRpe);
+      const sleepSd = sleepBaseline?.sd ?? sd(priorSleep);
+      const zRpe = zScore(avgRpe, rpeBaseline);
+      const zSleep = zScore(weekly?.sleep, sleepBaseline);
       const rpeExpected = trained.length;
       const rpeCompleted = trained.filter((item) => item.rpe != null).length;
       const wellbeingDone = Boolean(
@@ -526,10 +511,10 @@ function buildMetrics(
           ].every((value) => value != null),
       );
       const pending = rpeExpected - rpeCompleted + (wellbeingDone ? 0 : 1);
-      const compliance = Math.round(
-        ((rpeCompleted + (wellbeingDone ? 1 : 0)) /
-          Math.max(1, rpeExpected + 1)) *
-          100,
+      const compliance = compliancePercent(
+        rpeCompleted,
+        rpeExpected,
+        wellbeingDone,
       );
       const signals: Signal[] = [];
       if (
@@ -660,7 +645,7 @@ function buildMetrics(
         ewma: round(ewma, 0),
         ratio: round(ratio, 2),
         monotony: round(monotony, 2),
-        strain: round(monotony == null ? null : totalLoad * monotony, 0),
+        strain: round(strain, 0),
         zRpe: round(zRpe, 2),
         zSleep: round(zSleep, 2),
         personalRpe: round(personalRpe),
@@ -1554,7 +1539,7 @@ function LegacyTodayDashboard({
   const avgActual = mean(
     sessionRows.map((item) =>
       item.rpe != null && item.minutes != null
-        ? item.rpe * item.minutes
+        ? completeEffortProduct(item.rpe, item.minutes)
         : null,
     ),
   );
@@ -1967,7 +1952,7 @@ function TodayDashboard({
   const avgActual = mean(
     trainedRows.map((item) =>
       item.rpe != null && item.minutes != null
-        ? item.rpe * item.minutes
+        ? completeEffortProduct(item.rpe, item.minutes)
         : null,
     ),
   );
@@ -4305,21 +4290,22 @@ function RegisterView({
       return (playerA?.number ?? 0) - (playerB?.number ?? 0);
     });
   const validLoads = participants
-    .filter((item) => item.rpe != null && item.minutes != null)
-    .map((item) => loadForEffort(item.rpe, item.minutes));
+    .filter(
+      (
+        item,
+      ): item is SessionRecord & { rpe: number; minutes: number } =>
+        item.rpe != null && item.minutes != null,
+    )
+    .map((item) => loadForCompleteEffort(item.rpe, item.minutes));
   const validMinutes = participants
     .map((item) => item.minutes)
     .filter((item): item is number => item != null);
   const validRpe = participants
     .map((item) => item.rpe)
     .filter((item): item is number => item != null);
-  const averageOf = (values: number[]) =>
-    values.length
-      ? values.reduce((total, value) => total + value, 0) / values.length
-      : null;
-  const actualMinutes = averageOf(validMinutes);
-  const actualRpe = averageOf(validRpe);
-  const actualLoad = averageOf(validLoads);
+  const actualMinutes = mean(validMinutes);
+  const actualRpe = mean(validRpe);
+  const actualLoad = mean(validLoads);
   const plannedLoad = plan
     ? plan.plannedDuration * plan.targetRpe
     : null;
@@ -4548,7 +4534,7 @@ function RegisterView({
                 const participation = participationFor(row);
                 const pending = pendingPlayerIds.has(row.playerId);
                 const exception = isException(row);
-                const actual = row.rpe != null && row.minutes != null ? loadForEffort(row.rpe, row.minutes) : null;
+                const actual = row.rpe != null && row.minutes != null ? loadForCompleteEffort(row.rpe, row.minutes) : null;
                 const tone = participation === "COMPLETO" ? "complete" : participation === "MODIFICADO" ? "modified" : participation === "RECUPERACIÓN" ? "recovery" : participation === "AUSENTE" ? "absent" : participation === "SIN DATO" ? "unknown" : "unavailable";
                 return (
                   <div className={`session-player-row ${exception ? "is-exception" : "is-normal"} ${pending ? "needs-data" : ""}`} key={row.key} role="row">
@@ -4735,7 +4721,7 @@ function RegisterView({
                     />
                     <span>
                       {match.compensatory
-                        ? `${match.compensatoryMinutes} min · ${compact((match.compensatoryRpe ?? 0) * match.compensatoryMinutes)} UA`
+                        ? `${match.compensatoryMinutes} min · ${compact(completeEffortProduct(match.compensatoryRpe, match.compensatoryMinutes) ?? 0)} UA`
                         : "Añadir"}
                     </span>
                   </label>
@@ -6304,7 +6290,8 @@ function LegacyPlayerDetail({
       .length,
     minutes: playerMatches.reduce((sum, item) => sum + (item.minutes ?? 0), 0),
     load: playerMatches.reduce(
-      (sum, item) => sum + (item.rpe ?? 0) * item.minutes,
+      (sum, item) =>
+        sum + (completeEffortProduct(item.rpe, item.minutes) ?? 0),
       0,
     ),
     rpe: mean(playerMatches.map((item) => item.rpe)),
@@ -7177,12 +7164,12 @@ function PlayerDetail({
             <div className="weekly-effort-head"><span>Esfuerzo</span><span>Participación</span><span>RPE</span><span>Minutos</span><span>Carga</span></div>
             {weekSessions.map((row) => (
               <div className="weekly-effort-row" key={row.key}>
-                <strong>S{row.session}</strong><span>{titleCase(row.attendance)}</span><span>{display(row.rpe)}/10</span><span>{row.minutes == null ? "—" : `${row.minutes} min`}</span><strong>{row.rpe == null || row.minutes == null ? "Sin dato" : `${compact(loadForEffort(row.rpe, row.minutes))} UA`}</strong>
+                <strong>S{row.session}</strong><span>{titleCase(row.attendance)}</span><span>{display(row.rpe)}/10</span><span>{row.minutes == null ? "—" : `${row.minutes} min`}</span><strong>{row.rpe == null || row.minutes == null ? "Sin dato" : `${compact(loadForCompleteEffort(row.rpe, row.minutes))} UA`}</strong>
               </div>
             ))}
             {currentMatch && (
               <div className="weekly-effort-row match">
-                <strong>Partido</strong><span>{currentMatch.convocation.toLocaleLowerCase("es-ES")}</span><span>{display(currentMatch.rpe)}/10</span><span>{currentMatch.minutes} min</span><strong>{currentMatch.rpe == null ? "Sin dato" : `${compact(loadForEffort(currentMatch.rpe, currentMatch.minutes))} UA`}</strong>
+                <strong>Partido</strong><span>{currentMatch.convocation.toLocaleLowerCase("es-ES")}</span><span>{display(currentMatch.rpe)}/10</span><span>{currentMatch.minutes} min</span><strong>{currentMatch.rpe == null ? "Sin dato" : `${compact(loadForCompleteEffort(currentMatch.rpe, currentMatch.minutes))} UA`}</strong>
               </div>
             )}
           </section>

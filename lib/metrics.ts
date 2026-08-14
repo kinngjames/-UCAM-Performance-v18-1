@@ -1,18 +1,32 @@
-export const loadForEffort = (
+export function completeEffortProduct(rpe: number, minutes: number): number;
+export function completeEffortProduct(
   rpe: number | null | undefined,
   minutes: number | null | undefined,
-) => Math.round((rpe ?? 0) * (minutes ?? 0));
-
-export const loadForCompleteEffort = (
+): number | null;
+export function completeEffortProduct(
   rpe: number | null | undefined,
   minutes: number | null | undefined,
-) =>
-  typeof rpe === "number" &&
-  Number.isFinite(rpe) &&
-  typeof minutes === "number" &&
-  Number.isFinite(minutes)
-    ? Math.round(rpe * minutes)
+) {
+  return typeof rpe === "number" &&
+    Number.isFinite(rpe) &&
+    typeof minutes === "number" &&
+    Number.isFinite(minutes)
+    ? rpe * minutes
     : null;
+}
+
+export function loadForCompleteEffort(rpe: number, minutes: number): number;
+export function loadForCompleteEffort(
+  rpe: number | null | undefined,
+  minutes: number | null | undefined,
+): number | null;
+export function loadForCompleteEffort(
+  rpe: number | null | undefined,
+  minutes: number | null | undefined,
+) {
+  const product = completeEffortProduct(rpe, minutes);
+  return product == null ? null : Math.round(product);
+}
 
 export type LoadCompleteness =
   | "COMPLETE"
@@ -59,6 +73,7 @@ export const meanValue = (values: Array<number | null | undefined>) => {
 export const standardDeviation = (values: number[]) => {
   if (values.length < 2) return 0;
   const average = meanValue(values) ?? 0;
+  // Population SD: this describes exactly the observed personal-history window.
   return Math.sqrt(
     values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
       values.length,
