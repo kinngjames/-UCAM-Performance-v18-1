@@ -18,5 +18,5 @@ preservado, `undefined` rechazado y LF final.
 El generador exige al arrancar el SHA del dataset aprobado y el locale explícito
 `es-ES`. El entorno principal usa Node `24.19.0`. ICU no se fija como dependencia
 separada: el test exige la versión `78.3` y el texto real producido por
-`display()`. La comprobación de portabilidad usa además Node `22.13.0` con locale
+`domain/metrics/format.ts`. La comprobación de portabilidad usa además Node `22.13.0` con locale
 ambiental `C`.

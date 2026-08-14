@@ -42,8 +42,8 @@ La UI es funcional pero monolítica. La extracción de módulos debe hacerse por
 
 ### Métricas
 
-- `lib/metrics.ts`: primeras funciones puras extraídas y testeadas.
-- `buildMetrics` y parte de las reglas de alertas/tendencias siguen en `app/page.tsx`.
+- `domain/metrics/`: hogar único de tipos, primitivas, formateo contractual y reglas de señales testeadas.
+- `buildMetrics` sigue temporalmente en `app/page.tsx` hasta completar su extracción.
 - `docs/METRICS.md` es el contrato canónico hasta completar la centralización.
 
 ### Persistencia

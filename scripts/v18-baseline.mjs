@@ -9,7 +9,7 @@ export const V18_HISTORICAL_GOLDEN_SHA256 =
   "990cb9139bdb32696898d0bc18bd822c7e73d30c8649fcfcc5f61d4fd8ef81fd";
 export const V18_LOCALE = "es-ES";
 
-const assertExplicitLocale = (display) => {
+const assertExplicitLocale = (formatSignalNumber) => {
   const supported = Intl.NumberFormat.supportedLocalesOf([V18_LOCALE]);
   if (supported[0] !== V18_LOCALE) {
     throw new Error(
@@ -17,9 +17,9 @@ const assertExplicitLocale = (display) => {
     );
   }
   const contract = [
-    [display(6.5), "6,5"],
-    [display(12345.6), "12.345,6"],
-    [display(12345.6, 2), "12.345,60"],
+    [formatSignalNumber(6.5), "6,5"],
+    [formatSignalNumber(12345.6), "12.345,6"],
+    [formatSignalNumber(12345.6, 2), "12.345,60"],
   ];
   for (const [actual, expected] of contract) {
     if (actual !== expected) {
@@ -40,8 +40,8 @@ export const assertV18DatasetSha = (actual) => {
 
 export async function buildV18Baseline() {
   return withCurrentMetricsEngine(
-    async ({ buildMetrics, data, phase2, display }) => {
-      assertExplicitLocale(display);
+    async ({ buildMetrics, data, formatSignalNumber, phase2 }) => {
+      assertExplicitLocale(formatSignalNumber);
       const players = data.INITIAL_PLAYERS;
       const calendar = data.CALENDAR;
       const thresholds = data.INITIAL_THRESHOLDS;

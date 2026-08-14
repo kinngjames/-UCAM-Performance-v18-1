@@ -1,16 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { transform } from "esbuild";
+import { withCurrentMetricsEngine } from "../scripts/metrics-characterization.mjs";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-const metricsPromise = read("../lib/metrics.ts").then(async (source) => {
-  const compiled = await transform(source, { loader: "ts", format: "esm" });
-  return import(
-    `data:text/javascript;base64,${Buffer.from(compiled.code).toString("base64")}`
-  );
-});
+const metricsPromise = withCurrentMetricsEngine(({ domain }) => domain);
 
 test("la carga solo existe con RPE y minutos completos", async () => {
   const metrics = await metricsPromise;
@@ -141,7 +136,7 @@ test("distingue completo, parcial, sin exposición y sin datos", async () => {
 test("producción consume las seis primitivas centrales sin copias inline", async () => {
   const [page, engine] = await Promise.all([
     read("../app/page.tsx"),
-    read("../lib/metrics.ts"),
+    read("../domain/metrics/primitives.ts"),
   ]);
 
   for (const primitive of [

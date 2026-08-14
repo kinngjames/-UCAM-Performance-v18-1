@@ -1,4 +1,4 @@
-import type { LoadCompleteness } from "../domain/metrics/types";
+import type { LoadCompleteness } from "./types";
 
 export function completeEffortProduct(rpe: number, minutes: number): number;
 export function completeEffortProduct(
@@ -124,3 +124,6 @@ export const monotonyAndStrain = (dailyLoads: number[]) => {
     strain: monotony == null ? null : weeklyLoad(dailyLoads) * monotony,
   };
 };
+
+export const round = (value: number | null, decimals = 1) =>
+  value == null ? null : Math.round(value * 10 ** decimals) / 10 ** decimals;

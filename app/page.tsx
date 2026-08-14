@@ -7,7 +7,20 @@ import { CALENDAR, INITIAL_THRESHOLDS } from "./data";
 import {
   BASELINE_MINIMUM,
   BASELINE_WINDOW,
-} from "../domain/metrics/constants";
+  classifyLoadCompleteness,
+  completeEffortProduct,
+  compliancePercent,
+  deriveMetricSignals,
+  loadForCompleteEffort,
+  meanValue as mean,
+  monotonyAndStrain,
+  nextEwma,
+  personalBaseline,
+  round,
+  standardDeviation as sd,
+  summarizeLoadCoverage,
+  zScore,
+} from "../domain/metrics";
 import type {
   Attendance,
   Availability,
@@ -22,20 +35,8 @@ import type {
   Status,
   Thresholds,
   WellbeingRecord,
-} from "../domain/metrics/types";
-import {
-  classifyLoadCompleteness,
-  completeEffortProduct,
-  compliancePercent,
-  loadForCompleteEffort,
-  meanValue as mean,
-  monotonyAndStrain,
-  nextEwma,
-  personalBaseline,
-  standardDeviation as sd,
-  summarizeLoadCoverage,
-  zScore,
-} from "../lib/metrics";
+} from "../domain/metrics";
+import { display } from "./ui-format";
 import {
   ACTIVE_SESSION,
   ACTIVE_WEEK_ID,
@@ -157,15 +158,6 @@ const positionGroup = (position: string) => {
   return "CENTROCAMPISTAS";
 };
 
-const round = (value: number | null, decimals = 1) =>
-  value == null ? null : Math.round(value * 10 ** decimals) / 10 ** decimals;
-const display = (value: number | null, decimals = 1) =>
-  value == null
-    ? "—"
-    : value.toLocaleString("es-ES", {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      });
 const compact = (value: number | null) =>
   value == null
     ? "—"
@@ -429,97 +421,20 @@ function buildMetrics(
         rpeExpected,
         wellbeingDone,
       );
-      const signals: Signal[] = [];
-      if (
-        weekly?.sleep != null &&
-        personalSleep != null &&
-        weekly.sleep < personalSleep - Math.max(0.45, sleepSd)
-      )
-        signals.push({
-          key: "sleep-personal",
-          label: "Sueño inferior a su habitual",
-          data: `${display(weekly.sleep)} h`,
-          reference: `${display(personalSleep)} h`,
-          difference: `${display(weekly.sleep - personalSleep)} h`,
-          explanation:
-            "El dato está por debajo de su rango personal de las 8 semanas anteriores.",
-          action: "Comentar el contexto de descanso con el jugador.",
-          severity:
-            weekly.sleep < thresholds.criticalSleep ? "review" : "watch",
-        });
-      else if (weekly?.sleep != null && weekly.sleep < thresholds.lowSleep)
-        signals.push({
-          key: "sleep-absolute",
-          label: "Sueño bajo",
-          data: `${display(weekly.sleep)} h`,
-          reference: `Umbral ${display(thresholds.lowSleep)} h`,
-          difference: `${display(weekly.sleep - thresholds.lowSleep)} h`,
-          explanation:
-            personalSleep == null
-              ? "Todavía sin referencia personal suficiente; se muestra el umbral general."
-              : "Está por debajo del umbral configurado.",
-          action:
-            "Preguntar por el descanso, sin extraer conclusiones clínicas.",
-          severity: "watch",
-        });
-      if ((weekly?.fatigue ?? 0) >= thresholds.highFatigue)
-        signals.push({
-          key: "fatigue",
-          label: "Cansancio elevado",
-          data: `${display(weekly?.fatigue ?? null)}/5`,
-          reference: `Umbral ${thresholds.highFatigue}/5`,
-          difference: `+${display((weekly?.fatigue ?? 0) - thresholds.highFatigue)}`,
-          explanation: "Valor semanal igual o superior al umbral configurado.",
-          action: "Revisar sensaciones y contexto con el jugador.",
-          severity: "review",
-        });
-      if ((weekly?.pain ?? 0) >= thresholds.relevantPain)
-        signals.push({
-          key: "pain",
-          label: "Dolor relevante registrado",
-          data: `${display(weekly?.pain ?? null)}/10`,
-          reference: `Umbral ${thresholds.relevantPain}/10`,
-          difference: `+${display((weekly?.pain ?? 0) - thresholds.relevantPain)}`,
-          explanation:
-            "Es un dato comunicado por el jugador; no constituye un diagnóstico.",
-          action: "Revisar zona, limitación y evolución.",
-          severity: "review",
-        });
-      if (zRpe != null && zRpe >= thresholds.zScore)
-        signals.push({
-          key: "rpe-z",
-          label: "RPE por encima de su comportamiento habitual",
-          data: `${display(avgRpe)}/10`,
-          reference: `${display(personalRpe)}/10`,
-          difference: `z +${display(zRpe)}`,
-          explanation: `Se desvía ${display(zRpe)} desviaciones respecto a sus 8 semanas anteriores.`,
-          action:
-            "Contextualizar con el contenido y la duración de las sesiones.",
-          severity: "watch",
-        });
-      if (pending > 0)
-        signals.push({
-          key: "pending",
-          label: "Registro incompleto",
-          data: `${rpeCompleted}/${rpeExpected} RPE`,
-          reference: `Bienestar ${wellbeingDone ? "completo" : "pendiente"}`,
-          difference: `${pending} pendiente${pending > 1 ? "s" : ""}`,
-          explanation:
-            "Solo se cuentan los RPE de las sesiones en las que entrenó.",
-          action: "Solicitar los registros que faltan.",
-          severity: "info",
-        });
-      const review = signals.some((item) => item.severity === "review");
-      const watch = signals.some((item) => item.severity === "watch");
-      const status: Status = review
-        ? "REVISAR"
-        : pending > 0
-          ? "INCOMPLETO"
-          : watch
-            ? "VIGILAR"
-            : !trained.length && !weekly
-              ? "SIN DATOS"
-              : "OK";
+      const { reasons, signals, status } = deriveMetricSignals({
+        weekly,
+        personalSleep,
+        sleepSd,
+        thresholds,
+        zRpe,
+        avgRpe,
+        personalRpe,
+        pending,
+        rpeCompleted,
+        rpeExpected,
+        wellbeingDone,
+        trained: trained.length,
+      });
       const previousStreak = history.at(-1)?.streak ?? 0;
       const streak = compliance === 100 ? previousStreak + 1 : 0;
       const metric: PlayerMetric = {
@@ -583,7 +498,7 @@ function buildMetrics(
         loadCompleteness,
         expectedLoadEfforts,
         completedLoadEfforts,
-        reasons: signals.map((item) => item.label),
+        reasons,
         signals,
       };
       (metric as PlayerMetric & { sessions: number }).sessions =

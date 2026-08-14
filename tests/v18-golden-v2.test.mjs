@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { transform } from "esbuild";
 import { serializeCanonicalJson, sha256Utf8 } from "../scripts/canonical-json.mjs";
+import { withCurrentMetricsEngine } from "../scripts/metrics-characterization.mjs";
 import {
   assertV18DatasetSha,
   buildV18Baseline,
@@ -16,16 +15,8 @@ import {
 
 const hashMetrics = (metrics) => sha256Utf8(serializeCanonicalJson(metrics));
 
-const loadCentralMetrics = async () => {
-  const source = await readFile(
-    new URL("../lib/metrics.ts", import.meta.url),
-    "utf8",
-  );
-  const compiled = await transform(source, { loader: "ts", format: "esm" });
-  return import(
-    `data:text/javascript;base64,${Buffer.from(compiled.code).toString("base64")}`
-  );
-};
+const loadCentralMetrics = () =>
+  withCurrentMetricsEngine(({ domain }) => domain);
 
 const mutateCopy = (metrics, mutation) => {
   const copy = structuredClone(metrics);

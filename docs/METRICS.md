@@ -23,7 +23,7 @@ carga_sesión = RPE_sesión × minutos_reales
 - Unidad: UA.
 - Solo cuenta cuando la participación es `ENTRENÓ` y existen RPE y minutos.
 - Ausente, descanso, lesionado o registro incompleto no generan una carga inventada.
-- Implementación válida: `loadForCompleteEffort` devuelve `null` si falta RPE o minutos. `loadForEffort` queda como multiplicación de bajo nivel y solo se invoca tras validar ambos inputs.
+- Implementación válida: `loadForCompleteEffort` devuelve `null` si falta RPE o minutos; no existe una ruta alternativa que impute ausencias.
 
 ### Carga de partido
 

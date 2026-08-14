@@ -14,9 +14,10 @@ export async function loadCurrentMetricsEngine() {
         enforce: "pre",
         transform(source, id) {
           if (!id.endsWith(PAGE_SUFFIX)) return null;
-          return source
-            .replace("const display =", "export const display =")
-            .replace("function buildMetrics(", "export function buildMetrics(");
+          return source.replace(
+            "function buildMetrics(",
+            "export function buildMetrics(",
+          );
         },
       },
       react(),
@@ -26,14 +27,18 @@ export async function loadCurrentMetricsEngine() {
   });
 
   try {
-    const [module, data, phase2] = await Promise.all([
+    const [module, data, domain, phase2, uiFormat] = await Promise.all([
       server.ssrLoadModule("/app/page.tsx"),
       server.ssrLoadModule("/app/data.ts"),
+      server.ssrLoadModule("/domain/metrics/index.ts"),
       server.ssrLoadModule("/app/phase2-data.ts"),
+      server.ssrLoadModule("/app/ui-format.ts"),
     ]);
     return {
       buildMetrics: module.buildMetrics,
-      display: module.display,
+      display: uiFormat.display,
+      domain,
+      formatSignalNumber: domain.formatSignalNumber,
       data,
       phase2,
       close: () => server.close(),
