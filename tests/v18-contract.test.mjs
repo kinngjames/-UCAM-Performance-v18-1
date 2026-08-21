@@ -84,6 +84,19 @@ test("vacío no se convierte en cero y el partido conserva minutos desconocidos"
   assert.match(dataApi, /CASE WHEN mp\.minutes_recorded=1 THEN mp\.minutes ELSE NULL END/);
 });
 
+test("C10 valida thresholds en escritura y normaliza legacy en lectura", async () => {
+  const [page, stateApi, dataApi] = await Promise.all([
+    read("../app/page.tsx"),
+    read("../app/api/state/route.ts"),
+    read("../app/api/data/route.ts"),
+  ]);
+  assert.match(stateApi, /rows\.map\(validateThresholdRecordForWrite\)/);
+  assert.match(dataApi, /normalizePersistedThresholdRows/);
+  assert.match(dataApi, /thresholdNormalizations/);
+  assert.match(page, /parseThresholdValue/);
+  assert.match(page, /if \(parsed == null\) return/);
+});
+
 test("archivar preserva histórico y retira acceso activo", async () => {
   const api = await read("../app/api/admin/players/route.ts");
   assert.match(api, /SET active=0,access_active=0,archived_at=CURRENT_TIMESTAMP/);

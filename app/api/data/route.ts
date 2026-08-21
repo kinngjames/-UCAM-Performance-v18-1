@@ -5,6 +5,7 @@ import {
   requireAuth,
   seedWeekData,
 } from "../../../lib/server/platform";
+import { normalizePersistedThresholdRows } from "../../../domain/metrics";
 
 export async function GET(request: Request) {
   try {
@@ -71,6 +72,14 @@ export async function GET(request: Request) {
         .bind(auth.teamId)
         .all(),
     ]);
+    const normalizedThresholds = normalizePersistedThresholdRows(
+      thresholds.results as Array<Record<string, unknown>>,
+    );
+    if (normalizedThresholds.normalizations.length)
+      console.warn(
+        "THRESHOLD_NORMALIZATION",
+        JSON.stringify(normalizedThresholds.normalizations),
+      );
     return Response.json({
       weekId,
       players: players.results,
@@ -81,7 +90,8 @@ export async function GET(request: Request) {
       painRecords: pains.results,
       alerts: alerts.results,
       plans: plans.results,
-      thresholds: thresholds.results,
+      thresholds: normalizedThresholds.rows,
+      thresholdNormalizations: normalizedThresholds.normalizations,
     });
   } catch (error) {
     return apiError(error);

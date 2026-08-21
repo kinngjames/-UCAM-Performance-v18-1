@@ -65,24 +65,27 @@ export const deriveMetricSignals = ({
       action: "Preguntar por el descanso, sin extraer conclusiones clínicas.",
       severity: "watch",
     });
-  if ((weekly?.fatigue ?? 0) >= thresholds.highFatigue)
+  if (
+    weekly?.fatigue != null &&
+    weekly.fatigue >= thresholds.highFatigue
+  )
     signals.push({
       key: "fatigue",
       label: "Cansancio elevado",
       data: `${formatSignalValue(weekly?.fatigue)}/5`,
       reference: `Umbral ${thresholds.highFatigue}/5`,
-      difference: `+${formatSignalValue((weekly?.fatigue ?? 0) - thresholds.highFatigue)}`,
+      difference: `+${formatSignalValue(weekly.fatigue - thresholds.highFatigue)}`,
       explanation: "Valor semanal igual o superior al umbral configurado.",
       action: "Revisar sensaciones y contexto con el jugador.",
       severity: "review",
     });
-  if ((weekly?.pain ?? 0) >= thresholds.relevantPain)
+  if (weekly?.pain != null && weekly.pain >= thresholds.relevantPain)
     signals.push({
       key: "pain",
       label: "Dolor relevante registrado",
       data: `${formatSignalValue(weekly?.pain)}/10`,
       reference: `Umbral ${thresholds.relevantPain}/10`,
-      difference: `+${formatSignalValue((weekly?.pain ?? 0) - thresholds.relevantPain)}`,
+      difference: `+${formatSignalValue(weekly.pain - thresholds.relevantPain)}`,
       explanation:
         "Es un dato comunicado por el jugador; no constituye un diagnóstico.",
       action: "Revisar zona, limitación y evolución.",

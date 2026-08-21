@@ -7,6 +7,8 @@ import {
   requireAuth,
   SEASON_ID,
 } from "../../../lib/server/platform";
+import { validateThresholdRecordForWrite } from "../../../domain/metrics";
+import type { Thresholds } from "../../../domain/metrics";
 
 type Domain =
   | "sessions"
@@ -49,10 +51,28 @@ export async function POST(request: Request) {
       !["sessions", "wellbeing", "painRecords", "matches"].includes(domain)
     )
       throw new ApiError(403, "No tienes permisos para modificar estos datos.");
+    let validatedThresholdRows: Array<
+      Partial<Record<keyof Thresholds, number>>
+    > | null = null;
+    if (domain === "thresholds") {
+      if (auth.role !== "ADMIN")
+        throw new ApiError(
+          403,
+          "Solo un administrador puede modificar los umbrales.",
+        );
+      try {
+        validatedThresholdRows = rows.map(validateThresholdRecordForWrite);
+      } catch {
+        throw new ApiError(
+          400,
+          "Uno de los umbrales no es válido; se conserva la configuración anterior.",
+        );
+      }
+    }
     const db = await ensureSeeded();
     const now = new Date().toISOString();
     const weekKey = `week-${weekId}`;
-    for (const row of rows) {
+    for (const [rowIndex, row] of rows.entries()) {
       const playerId = row.playerId ? String(row.playerId) : null;
       if (playerId) assertOwnPlayer(auth, playerId);
       if (domain === "sessions") {
@@ -393,14 +413,10 @@ export async function POST(request: Request) {
           request.headers.get("cf-ray"),
         );
       } else if (domain === "thresholds") {
-        if (auth.role !== "ADMIN")
-          throw new ApiError(
-            403,
-            "Solo un administrador puede modificar los umbrales.",
-          );
-        for (const [key, value] of Object.entries(row)) {
-          if (key === "playerId") continue;
-          const parsed = num(value, 0, 100) as number;
+        const validated = validatedThresholdRows?.[rowIndex];
+        if (!validated)
+          throw new ApiError(400, "Los umbrales enviados no son válidos.");
+        for (const [key, parsed] of Object.entries(validated)) {
           await db
             .prepare(
               "INSERT INTO thresholds (id,team_id,key,value,created_at,updated_at) VALUES (?,?,?,?,?,?) ON CONFLICT(team_id,key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at",
@@ -414,7 +430,7 @@ export async function POST(request: Request) {
           "thresholds",
           auth.teamId,
           null,
-          row,
+          validated,
           request.headers.get("cf-ray"),
         );
       }

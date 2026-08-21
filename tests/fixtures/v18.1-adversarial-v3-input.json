@@ -1,0 +1,410 @@
+{
+  "scenarios": [
+    {
+      "caseIds": [
+        "T2-MISSING"
+      ],
+      "input": {
+        "availability": [
+          {
+            "note": "Fixture v3",
+            "playerId": "V3-T2-MISSING",
+            "value": "COMPLETO",
+            "weekId": 1
+          }
+        ],
+        "calendar": [
+          {
+            "id": 1
+          }
+        ],
+        "matches": [],
+        "players": [
+          {
+            "accessActive": true,
+            "active": true,
+            "birthDate": "2009-01-01",
+            "dominantFoot": "DERECHA",
+            "id": "V3-T2-MISSING",
+            "name": "V3-T2-MISSING",
+            "notes": "Fixture adversarial v18.1 v3",
+            "number": 94,
+            "position": "MEDIO"
+          }
+        ],
+        "sessions": [],
+        "thresholds": {
+          "baselineWeeks": 12,
+          "criticalSleep": 6.5,
+          "highFatigue": 0,
+          "highRpe": 10,
+          "highStress": 4,
+          "lowMood": 2,
+          "lowSleep": 8,
+          "relevantPain": 0,
+          "zScore": 1.5
+        },
+        "wellbeing": [
+          {
+            "fatigue": null,
+            "mood": 4,
+            "notes": "Fixture v3",
+            "pain": null,
+            "playerId": "V3-T2-MISSING",
+            "sleep": 8,
+            "stress": 2,
+            "weekId": 1
+          }
+        ]
+      },
+      "metricKeys": [
+        "1-V3-T2-MISSING"
+      ]
+    },
+    {
+      "caseIds": [
+        "T2-BELOW",
+        "T2-ABOVE"
+      ],
+      "input": {
+        "availability": [
+          {
+            "note": "Fixture v3",
+            "playerId": "V3-T2-BELOW",
+            "value": "COMPLETO",
+            "weekId": 1
+          },
+          {
+            "note": "Fixture v3",
+            "playerId": "V3-T2-ABOVE",
+            "value": "COMPLETO",
+            "weekId": 1
+          }
+        ],
+        "calendar": [
+          {
+            "id": 1
+          }
+        ],
+        "matches": [],
+        "players": [
+          {
+            "accessActive": true,
+            "active": true,
+            "birthDate": "2009-01-01",
+            "dominantFoot": "DERECHA",
+            "id": "V3-T2-BELOW",
+            "name": "V3-T2-BELOW",
+            "notes": "Fixture adversarial v18.1 v3",
+            "number": 95,
+            "position": "MEDIO"
+          },
+          {
+            "accessActive": true,
+            "active": true,
+            "birthDate": "2009-01-01",
+            "dominantFoot": "DERECHA",
+            "id": "V3-T2-ABOVE",
+            "name": "V3-T2-ABOVE",
+            "notes": "Fixture adversarial v18.1 v3",
+            "number": 96,
+            "position": "MEDIO"
+          }
+        ],
+        "sessions": [],
+        "thresholds": {
+          "baselineWeeks": 12,
+          "criticalSleep": 6.5,
+          "highFatigue": 4,
+          "highRpe": 10,
+          "highStress": 4,
+          "lowMood": 2,
+          "lowSleep": 8,
+          "relevantPain": 4,
+          "zScore": 1.5
+        },
+        "wellbeing": [
+          {
+            "fatigue": 3,
+            "mood": 4,
+            "notes": "Fixture v3",
+            "pain": 3,
+            "playerId": "V3-T2-BELOW",
+            "sleep": 8,
+            "stress": 2,
+            "weekId": 1
+          },
+          {
+            "fatigue": 5,
+            "mood": 4,
+            "notes": "Fixture v3",
+            "pain": 5,
+            "playerId": "V3-T2-ABOVE",
+            "sleep": 8,
+            "stress": 2,
+            "weekId": 1
+          }
+        ]
+      },
+      "metricKeys": [
+        "1-V3-T2-BELOW",
+        "1-V3-T2-ABOVE"
+      ]
+    },
+    {
+      "caseIds": [
+        "M1",
+        "M2",
+        "M3",
+        "M4"
+      ],
+      "input": {
+        "availability": [
+          {
+            "note": "Fixture v3",
+            "playerId": "V3-M1",
+            "value": "COMPLETO",
+            "weekId": 1
+          },
+          {
+            "note": "Fixture v3",
+            "playerId": "V3-M2",
+            "value": "COMPLETO",
+            "weekId": 1
+          },
+          {
+            "note": "Fixture v3",
+            "playerId": "V3-M3",
+            "value": "COMPLETO",
+            "weekId": 1
+          },
+          {
+            "note": "Fixture v3",
+            "playerId": "V3-M4",
+            "value": "COMPLETO",
+            "weekId": 1
+          }
+        ],
+        "calendar": [
+          {
+            "id": 1
+          }
+        ],
+        "matches": [
+          {
+            "compensatory": false,
+            "compensatoryMinutes": 0,
+            "compensatoryRpe": null,
+            "convocation": "TITULAR",
+            "date": "2026-09-20",
+            "key": "V3-MATCH-V3-M1",
+            "minutes": null,
+            "observation": "Fixture v3",
+            "opponent": "ADVERSARIAL",
+            "playerId": "V3-M1",
+            "rpe": 6,
+            "venue": "LOCAL",
+            "weekId": 1
+          },
+          {
+            "compensatory": false,
+            "compensatoryMinutes": 0,
+            "compensatoryRpe": null,
+            "convocation": "TITULAR",
+            "date": "2026-09-20",
+            "key": "V3-MATCH-V3-M2",
+            "minutes": 60,
+            "observation": "Fixture v3",
+            "opponent": "ADVERSARIAL",
+            "playerId": "V3-M2",
+            "rpe": null,
+            "venue": "LOCAL",
+            "weekId": 1
+          },
+          {
+            "compensatory": true,
+            "compensatoryMinutes": null,
+            "compensatoryRpe": 5,
+            "convocation": "NO CONVOCADO",
+            "date": "2026-09-20",
+            "key": "V3-MATCH-V3-M3",
+            "minutes": 0,
+            "observation": "Fixture v3",
+            "opponent": "ADVERSARIAL",
+            "playerId": "V3-M3",
+            "rpe": null,
+            "venue": "LOCAL",
+            "weekId": 1
+          },
+          {
+            "compensatory": true,
+            "compensatoryMinutes": 30,
+            "compensatoryRpe": null,
+            "convocation": "NO CONVOCADO",
+            "date": "2026-09-20",
+            "key": "V3-MATCH-V3-M4",
+            "minutes": 0,
+            "observation": "Fixture v3",
+            "opponent": "ADVERSARIAL",
+            "playerId": "V3-M4",
+            "rpe": null,
+            "venue": "LOCAL",
+            "weekId": 1
+          }
+        ],
+        "players": [
+          {
+            "accessActive": true,
+            "active": true,
+            "birthDate": "2009-01-01",
+            "dominantFoot": "DERECHA",
+            "id": "V3-M1",
+            "name": "V3-M1",
+            "notes": "Fixture adversarial v18.1 v3",
+            "number": 97,
+            "position": "MEDIO"
+          },
+          {
+            "accessActive": true,
+            "active": true,
+            "birthDate": "2009-01-01",
+            "dominantFoot": "DERECHA",
+            "id": "V3-M2",
+            "name": "V3-M2",
+            "notes": "Fixture adversarial v18.1 v3",
+            "number": 98,
+            "position": "MEDIO"
+          },
+          {
+            "accessActive": true,
+            "active": true,
+            "birthDate": "2009-01-01",
+            "dominantFoot": "DERECHA",
+            "id": "V3-M3",
+            "name": "V3-M3",
+            "notes": "Fixture adversarial v18.1 v3",
+            "number": 99,
+            "position": "MEDIO"
+          },
+          {
+            "accessActive": true,
+            "active": true,
+            "birthDate": "2009-01-01",
+            "dominantFoot": "DERECHA",
+            "id": "V3-M4",
+            "name": "V3-M4",
+            "notes": "Fixture adversarial v18.1 v3",
+            "number": 100,
+            "position": "MEDIO"
+          }
+        ],
+        "sessions": [
+          {
+            "attendance": "ENTRENÓ",
+            "incident": "",
+            "key": "V3-S1-V3-M1",
+            "minutes": 60,
+            "note": "",
+            "playerId": "V3-M1",
+            "rpe": 5,
+            "session": 1,
+            "weekId": 1
+          },
+          {
+            "attendance": "ENTRENÓ",
+            "incident": "",
+            "key": "V3-S1-V3-M2",
+            "minutes": 60,
+            "note": "",
+            "playerId": "V3-M2",
+            "rpe": 5,
+            "session": 1,
+            "weekId": 1
+          },
+          {
+            "attendance": "ENTRENÓ",
+            "incident": "",
+            "key": "V3-S1-V3-M3",
+            "minutes": 60,
+            "note": "",
+            "playerId": "V3-M3",
+            "rpe": 5,
+            "session": 1,
+            "weekId": 1
+          },
+          {
+            "attendance": "ENTRENÓ",
+            "incident": "",
+            "key": "V3-S1-V3-M4",
+            "minutes": 60,
+            "note": "",
+            "playerId": "V3-M4",
+            "rpe": 5,
+            "session": 1,
+            "weekId": 1
+          }
+        ],
+        "thresholds": {
+          "baselineWeeks": 12,
+          "criticalSleep": 6.5,
+          "highFatigue": 4,
+          "highRpe": 10,
+          "highStress": 4,
+          "lowMood": 2,
+          "lowSleep": 8,
+          "relevantPain": 4,
+          "zScore": 1.5
+        },
+        "wellbeing": [
+          {
+            "fatigue": 2,
+            "mood": 4,
+            "notes": "Fixture v3",
+            "pain": 0,
+            "playerId": "V3-M1",
+            "sleep": 8,
+            "stress": 2,
+            "weekId": 1
+          },
+          {
+            "fatigue": 2,
+            "mood": 4,
+            "notes": "Fixture v3",
+            "pain": 0,
+            "playerId": "V3-M2",
+            "sleep": 8,
+            "stress": 2,
+            "weekId": 1
+          },
+          {
+            "fatigue": 2,
+            "mood": 4,
+            "notes": "Fixture v3",
+            "pain": 0,
+            "playerId": "V3-M3",
+            "sleep": 8,
+            "stress": 2,
+            "weekId": 1
+          },
+          {
+            "fatigue": 2,
+            "mood": 4,
+            "notes": "Fixture v3",
+            "pain": 0,
+            "playerId": "V3-M4",
+            "sleep": 8,
+            "stress": 2,
+            "weekId": 1
+          }
+        ]
+      },
+      "metricKeys": [
+        "1-V3-M1",
+        "1-V3-M2",
+        "1-V3-M3",
+        "1-V3-M4"
+      ]
+    }
+  ],
+  "version": "v18.1-adversarial-v3"
+}
