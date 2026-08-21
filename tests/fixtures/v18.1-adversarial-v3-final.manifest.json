@@ -1,0 +1,26 @@
+{
+  "cases": [
+    "T2-MISSING",
+    "T2-BELOW",
+    "T2-ABOVE",
+    "M1",
+    "M2",
+    "M3",
+    "M4"
+  ],
+  "contract": [
+    "C9-null-guards",
+    "M3-compensatory-expectation",
+    "C13-null-components-known-total",
+    "C12-no-sessions-alias"
+  ],
+  "engine": "domain/metrics/build-metrics.ts#buildMetrics",
+  "format": "canonical-json-v1",
+  "inputFilename": "v18.1-adversarial-v3-input.json",
+  "inputSha256": "95b8fbe772bbd42ec12f33120e12c347871baa5bc2611cfc575a207e9ebdd6ec",
+  "outputFilename": "v18.1-adversarial-v3-final-output.json",
+  "outputSha256": "70e3f268283deb102350b35a16128eeff08296fc0ec7227dc32ebd0d58c7cd0f",
+  "records": 7,
+  "sensitivity": "C9-null-coercion-mutant",
+  "version": "v18.1-adversarial-v3-final"
+}

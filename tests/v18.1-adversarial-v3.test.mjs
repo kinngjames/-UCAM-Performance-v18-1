@@ -2,12 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   proveV181AdversarialV3Sensitivity,
+  V181_ADVERSARIAL_V3_INPUT_SHA256,
+  V181_ADVERSARIAL_V3_OUTPUT_SHA256,
   verifyV181AdversarialV3,
 } from "../scripts/v18.1-adversarial-v3.mjs";
 
 test("fixture v3 fija guardas nulas, configuración y esfuerzos incompletos", async () => {
   const result = await verifyV181AdversarialV3();
   assert.equal(result.output.length, 7);
+  assert.equal(result.inputSha256, V181_ADVERSARIAL_V3_INPUT_SHA256);
+  assert.equal(result.outputSha256, V181_ADVERSARIAL_V3_OUTPUT_SHA256);
   const byCase = new Map(result.output.map((item) => [item.caseId, item.metric]));
   assert.deepEqual(byCase.get("T2-MISSING").signals, []);
   assert.deepEqual(byCase.get("T2-BELOW").signals, []);
@@ -40,6 +44,13 @@ test("fixture v3 fija guardas nulas, configuración y esfuerzos incompletos", as
     ],
     [2, 1],
   );
+  for (const id of ["M1", "M2", "M3", "M4"]) {
+    const metric = byCase.get(id);
+    assert.deepEqual(
+      [metric.trainingLoad, metric.load, metric.loadCompleteness],
+      [300, 300, "PARTIAL"],
+    );
+  }
 });
 
 test("sensibilidad v3 detecta específicamente la regresión C9", async () => {

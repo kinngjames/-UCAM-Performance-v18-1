@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { open, readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import { serializeCanonicalJson, sha256Utf8 } from "./canonical-json.mjs";
@@ -22,8 +22,16 @@ export const V181_ADVERSARIAL_V3_C13_OUTPUT_PATH = new URL(
   "../tests/fixtures/v18.1-adversarial-v3-c13-output.json",
   import.meta.url,
 );
-export const V181_ADVERSARIAL_V3_OUTPUT_PATH = new URL(
+export const V181_ADVERSARIAL_V3_C12_OUTPUT_PATH = new URL(
   "../tests/fixtures/v18.1-adversarial-v3-c12-output.json",
+  import.meta.url,
+);
+export const V181_ADVERSARIAL_V3_OUTPUT_PATH = new URL(
+  "../tests/fixtures/v18.1-adversarial-v3-final-output.json",
+  import.meta.url,
+);
+export const V181_ADVERSARIAL_V3_MANIFEST_PATH = new URL(
+  "../tests/fixtures/v18.1-adversarial-v3-final.manifest.json",
   import.meta.url,
 );
 export const V181_ADVERSARIAL_V3_INPUT_SHA256 =
@@ -34,8 +42,10 @@ export const V181_ADVERSARIAL_V3_M3_OUTPUT_SHA256 =
   "43b4ed2cab8f0811f344db62e9cfb487067da456e8988626b00612579948cc55";
 export const V181_ADVERSARIAL_V3_C13_OUTPUT_SHA256 =
   "0e5994971878f45042f398e832111daadbc877d5a3cd057929a4736438a93a7e";
-export const V181_ADVERSARIAL_V3_OUTPUT_SHA256 =
+export const V181_ADVERSARIAL_V3_C12_OUTPUT_SHA256 =
   "70e3f268283deb102350b35a16128eeff08296fc0ec7227dc32ebd0d58c7cd0f";
+export const V181_ADVERSARIAL_V3_OUTPUT_SHA256 =
+  V181_ADVERSARIAL_V3_C12_OUTPUT_SHA256;
 
 const thresholds = (overrides = {}) => ({
   baselineWeeks: 12,
@@ -280,6 +290,25 @@ const writeExclusive = async (path, contents) => {
   }
 };
 
+const finalManifest = () => ({
+  cases: ["T2-MISSING", "T2-BELOW", "T2-ABOVE", "M1", "M2", "M3", "M4"],
+  contract: [
+    "C9-null-guards",
+    "M3-compensatory-expectation",
+    "C13-null-components-known-total",
+    "C12-no-sessions-alias",
+  ],
+  engine: "domain/metrics/build-metrics.ts#buildMetrics",
+  format: "canonical-json-v1",
+  inputFilename: basename(fileURLToPath(V181_ADVERSARIAL_V3_INPUT_PATH)),
+  inputSha256: V181_ADVERSARIAL_V3_INPUT_SHA256,
+  outputFilename: basename(fileURLToPath(V181_ADVERSARIAL_V3_OUTPUT_PATH)),
+  outputSha256: V181_ADVERSARIAL_V3_OUTPUT_SHA256,
+  records: 7,
+  sensitivity: "C9-null-coercion-mutant",
+  version: "v18.1-adversarial-v3-final",
+});
+
 export async function verifyV181AdversarialV3() {
   const { contents: inputContents, input } = await readVerifiedInput();
   const historical = await readFile(
@@ -297,11 +326,20 @@ export async function verifyV181AdversarialV3() {
   const c13 = await readFile(V181_ADVERSARIAL_V3_C13_OUTPUT_PATH, "utf8");
   assert.equal(c13, serializeCanonicalJson(JSON.parse(c13)));
   assert.equal(sha256Utf8(c13), V181_ADVERSARIAL_V3_C13_OUTPUT_SHA256);
+  const c12 = await readFile(V181_ADVERSARIAL_V3_C12_OUTPUT_PATH, "utf8");
+  assert.equal(c12, serializeCanonicalJson(JSON.parse(c12)));
+  assert.equal(sha256Utf8(c12), V181_ADVERSARIAL_V3_C12_OUTPUT_SHA256);
   const output = await runCurrent(input);
   const outputContents = serializeCanonicalJson(output);
   const stored = await readFile(V181_ADVERSARIAL_V3_OUTPUT_PATH, "utf8");
   assert.equal(stored, outputContents);
+  assert.equal(stored, c12, "T1 no puede alterar el fixture final");
   assert.equal(sha256Utf8(stored), V181_ADVERSARIAL_V3_OUTPUT_SHA256);
+  const manifestContents = await readFile(
+    V181_ADVERSARIAL_V3_MANIFEST_PATH,
+    "utf8",
+  );
+  assert.equal(manifestContents, serializeCanonicalJson(finalManifest()));
   return {
     inputSha256: sha256Utf8(inputContents),
     output,
@@ -315,6 +353,21 @@ export async function generateCurrentV181AdversarialV3(outputPath) {
   const outputContents = serializeCanonicalJson(await runCurrent(input));
   await writeExclusive(outputPath, outputContents);
   return { outputSha256: sha256Utf8(outputContents) };
+}
+
+export async function finalizeV181AdversarialV3() {
+  const { input } = await readVerifiedInput();
+  const outputContents = serializeCanonicalJson(await runCurrent(input));
+  assert.equal(sha256Utf8(outputContents), V181_ADVERSARIAL_V3_OUTPUT_SHA256);
+  await writeExclusive(V181_ADVERSARIAL_V3_OUTPUT_PATH, outputContents);
+  await writeExclusive(
+    V181_ADVERSARIAL_V3_MANIFEST_PATH,
+    serializeCanonicalJson(finalManifest()),
+  );
+  return {
+    inputSha256: V181_ADVERSARIAL_V3_INPUT_SHA256,
+    outputSha256: V181_ADVERSARIAL_V3_OUTPUT_SHA256,
+  };
 }
 
 async function bootstrap(inputPath, outputPath) {
@@ -342,6 +395,12 @@ async function main() {
       `${JSON.stringify(
         await generateCurrentV181AdversarialV3(resolve(args[0])),
       )}\n`,
+    );
+    return;
+  }
+  if (command === "--finalize" && args.length === 0) {
+    process.stdout.write(
+      `${JSON.stringify(await finalizeV181AdversarialV3())}\n`,
     );
     return;
   }
