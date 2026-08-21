@@ -220,8 +220,6 @@ export function buildMetrics({
         wellbeingDone,
         pending,
         recordCompleteness,
-        monotony: null,
-        strain: null,
         zRpe: round(zRpe, 2),
         zSleep: round(zSleep, 2),
         personalRpe: round(personalRpe),

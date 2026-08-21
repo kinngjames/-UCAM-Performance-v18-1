@@ -18,12 +18,11 @@ import {
   V181_ADVERSARIAL_OUTPUT_SHA256,
 } from "../scripts/v18.1-adversarial.mjs";
 import {
+  V181_GOLDEN_SHA256,
   V181_GOLDEN_PATH,
   V181_MANIFEST_PATH,
 } from "../scripts/v18.1-golden.mjs";
 
-const V181_GOLDEN_SHA256 =
-  "7d72932658949742d528e9d2c904e3fed21f0075326044b4e456e2dda40e8b58";
 const V181_FIELDS = [
   "availability",
   "availabilityKnown",
@@ -40,7 +39,6 @@ const V181_FIELDS = [
   "matchMinutes",
   "matchRpe",
   "minutes",
-  "monotony",
   "mood",
   "pain",
   "pending",
@@ -57,7 +55,6 @@ const V181_FIELDS = [
   "sleep",
   "sleepRange",
   "status",
-  "strain",
   "stress",
   "trained",
   "trainingLoad",
@@ -72,20 +69,20 @@ const REMOVED_FIELDS = [
   "chronic",
   "compliance",
   "ewma",
+  "monotony",
   "plannedTotalLoad",
   "plannedTrainingLoad",
   "ratio",
+  "strain",
   "streak",
 ];
 const MODIFIED_FIELDS = [
-  "monotony",
   "pending",
   "reasons",
   "rpeRange",
   "signals",
   "sleepRange",
   "status",
-  "strain",
   "zRpe",
   "zSleep",
 ];
@@ -147,10 +144,9 @@ test("los seis anclajes y ambos outputs v18.1 conservan bytes canónicos", async
   assert.equal(V18_ADVERSARIAL_INPUT_SHA256, "00fb9f767a9155d637ef5b68154d4f663db3b67a7f01e0a0442263b5ee76e23b");
   assert.equal(V18_ADVERSARIAL_OUTPUT_SHA256, "aa5090b824c00635966fb42edc77f8fe544b093bf278ba8e4210ba4353d5bd6d");
   assert.deepEqual(JSON.parse(manifestContents), {
-    block2FinalTreeSha1: "840748353257ad865e0f10c16bf2cdda171660ab",
     datasetSha256: V18_DATASET_SHA256,
     format: "canonical-json-v1",
-    goldenFilename: "v18.1-player-metrics.json",
+    goldenFilename: "v18.1-final-player-metrics.json",
     goldenSha256: V181_GOLDEN_SHA256,
     historicalV18: {
       fixtureInputSha256: V18_ADVERSARIAL_INPUT_SHA256,
@@ -158,9 +154,16 @@ test("los seis anclajes y ambos outputs v18.1 conservan bytes canónicos", async
       goldenSha256: V18_GOLDEN_V2_SHA256,
     },
     metrics: 760,
+    playerMetricFields: V181_FIELDS,
+    provisionalV181: {
+      goldenFilename: "v18.1-player-metrics.json",
+      goldenSha256:
+        "7d72932658949742d528e9d2c904e3fed21f0075326044b4e456e2dda40e8b58",
+      retiredFields: ["monotony", "strain"],
+    },
     signals: 105,
     status: { OK: 663, REVISAR: 7, VIGILAR: 86, null: 4 },
-    version: "v18.1",
+    version: "v18.1-final",
   });
 });
 
@@ -180,8 +183,8 @@ test("el golden v18.1 fija exactamente el contrato público de PlayerMetric", as
     }
     assert.equal(Object.hasOwn(metric, "wellbeingExpected"), true);
     assert.equal(Object.hasOwn(metric, "recordCompleteness"), true);
-    assert.equal(metric.monotony, null);
-    assert.equal(metric.strain, null);
+    assert.equal(Object.hasOwn(metric, "monotony"), false);
+    assert.equal(Object.hasOwn(metric, "strain"), false);
   }
 });
 

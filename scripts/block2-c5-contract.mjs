@@ -28,11 +28,12 @@ const countBy = (metrics, field) =>
     }, new Map()),
   );
 
-export const buildC5ExpectedMetric = (c4Metric) => ({
-  ...structuredClone(c4Metric),
-  monotony: null,
-  strain: null,
-});
+export const buildC5ExpectedMetric = (c4Metric) => {
+  const expected = structuredClone(c4Metric);
+  delete expected.monotony;
+  delete expected.strain;
+  return expected;
+};
 
 export const buildC5ExpectedCollection = (c4Metrics) =>
   c4Metrics.map(buildC5ExpectedMetric);
@@ -48,7 +49,7 @@ const verifyCollection = ({ actual, c4Expected, historical, label }) => {
   let statusDifferences = 0;
   const changedFields = { monotony: 0, strain: 0 };
   const before = { monotonyNonNull: 0, strainNonNull: 0 };
-  const after = { monotonyNull: 0, strainNull: 0 };
+  const after = { monotonyAbsent: 0, strainAbsent: 0 };
 
   for (const historicalMetric of historical) {
     const key = metricKey(historicalMetric);
@@ -83,8 +84,8 @@ const verifyCollection = ({ actual, c4Expected, historical, label }) => {
     }
     before.monotonyNonNull += Number(c4Metric.monotony != null);
     before.strainNonNull += Number(c4Metric.strain != null);
-    after.monotonyNull += Number(actualMetric.monotony == null);
-    after.strainNull += Number(actualMetric.strain == null);
+    after.monotonyAbsent += Number(!Object.hasOwn(actualMetric, "monotony"));
+    after.strainAbsent += Number(!Object.hasOwn(actualMetric, "strain"));
     signalsDifferences += Number(
       serializeCanonicalJson(actualMetric.signals) !==
         serializeCanonicalJson(c4Metric.signals),
@@ -101,8 +102,8 @@ const verifyCollection = ({ actual, c4Expected, historical, label }) => {
   assert.equal(signalsDifferences, 0, `${label}: signals`);
   assert.equal(reasonsDifferences, 0, `${label}: reasons`);
   assert.equal(statusDifferences, 0, `${label}: status`);
-  assert.equal(after.monotonyNull, actual.length, `${label}: monotony final`);
-  assert.equal(after.strainNull, actual.length, `${label}: strain final`);
+  assert.equal(after.monotonyAbsent, actual.length, `${label}: monotony ausente`);
+  assert.equal(after.strainAbsent, actual.length, `${label}: strain ausente`);
 
   return {
     after,
@@ -174,18 +175,21 @@ export async function verifyBlock2C5Contract() {
     monotonyNonNull: 756,
     strainNonNull: 756,
   });
-  assert.deepEqual(demo.after, { monotonyNull: 760, strainNull: 760 });
-  assert.deepEqual(demo.changedFields, { monotony: 756, strain: 756 });
-  assert.deepEqual(fixture.changedFields, { monotony: 9, strain: 9 });
+  assert.deepEqual(demo.after, { monotonyAbsent: 760, strainAbsent: 760 });
+  assert.deepEqual(demo.changedFields, { monotony: 760, strain: 760 });
+  assert.deepEqual(fixture.changedFields, { monotony: 10, strain: 10 });
 
   const fixtureRows = currentFixture.output.map((metric, index) => ({
     id: `R${index + 1}`,
     monotony: {
-      after: metric.monotony,
+      after: Object.hasOwn(metric, "monotony") ? metric.monotony : "ABSENT",
       before: c4.fixture[index].monotony,
     },
     playerId: metric.playerId,
-    strain: { after: metric.strain, before: c4.fixture[index].strain },
+    strain: {
+      after: Object.hasOwn(metric, "strain") ? metric.strain : "ABSENT",
+      before: c4.fixture[index].strain,
+    },
     weekId: metric.weekId,
   }));
   assert.deepEqual(
@@ -198,7 +202,8 @@ export async function verifyBlock2C5Contract() {
   );
   assert.ok(
     fixtureRows.every(
-      (row) => row.monotony.after === null && row.strain.after === null,
+      (row) =>
+        row.monotony.after === "ABSENT" && row.strain.after === "ABSENT",
     ),
   );
 

@@ -1,0 +1,70 @@
+{
+  "datasetSha256": "2d30cadd2469c1a6e4c3eef2331a92bf424795ff50826d319a2b1c57150a509b",
+  "format": "canonical-json-v1",
+  "goldenFilename": "v18.1-final-player-metrics.json",
+  "goldenSha256": "08d8c2a0d681f44b71cf0264e49891eb44ce455c792306370382c0ab5fb62c9e",
+  "historicalV18": {
+    "fixtureInputSha256": "00fb9f767a9155d637ef5b68154d4f663db3b67a7f01e0a0442263b5ee76e23b",
+    "fixtureOutputSha256": "aa5090b824c00635966fb42edc77f8fe544b093bf278ba8e4210ba4353d5bd6d",
+    "goldenSha256": "c24421e7afed99ee483930a340e724440d8285a361fa26b2673622de69d5b7b4"
+  },
+  "metrics": 760,
+  "playerMetricFields": [
+    "availability",
+    "availabilityKnown",
+    "avgRpe",
+    "compensatoryLoad",
+    "completed",
+    "completedLoadEfforts",
+    "convocation",
+    "expectedLoadEfforts",
+    "fatigue",
+    "load",
+    "loadCompleteness",
+    "matchLoad",
+    "matchMinutes",
+    "matchRpe",
+    "minutes",
+    "mood",
+    "pain",
+    "pending",
+    "personalRpe",
+    "personalSleep",
+    "playerId",
+    "reasons",
+    "recordCompleteness",
+    "rpeCompleted",
+    "rpeExpected",
+    "rpeRange",
+    "sessions",
+    "signals",
+    "sleep",
+    "sleepRange",
+    "status",
+    "stress",
+    "trained",
+    "trainingLoad",
+    "trainingMinutes",
+    "weekId",
+    "wellbeingDone",
+    "wellbeingExpected",
+    "zRpe",
+    "zSleep"
+  ],
+  "provisionalV181": {
+    "goldenFilename": "v18.1-player-metrics.json",
+    "goldenSha256": "7d72932658949742d528e9d2c904e3fed21f0075326044b4e456e2dda40e8b58",
+    "retiredFields": [
+      "monotony",
+      "strain"
+    ]
+  },
+  "signals": 105,
+  "status": {
+    "OK": 663,
+    "REVISAR": 7,
+    "VIGILAR": 86,
+    "null": 4
+  },
+  "version": "v18.1-final"
+}

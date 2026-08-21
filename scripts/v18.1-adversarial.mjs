@@ -12,11 +12,17 @@ import {
 } from "./v18-adversarial.mjs";
 
 export const V181_ADVERSARIAL_OUTPUT_PATH = new URL(
+  "../tests/fixtures/v18.1-final-adversarial-output.json",
+  import.meta.url,
+);
+export const PROVISIONAL_V181_ADVERSARIAL_OUTPUT_PATH = new URL(
   "../tests/fixtures/v18.1-adversarial-output.json",
   import.meta.url,
 );
-export const V181_ADVERSARIAL_OUTPUT_SHA256 =
+export const PROVISIONAL_V181_ADVERSARIAL_OUTPUT_SHA256 =
   "537b8f79f471f5dd311d66e74ee1b3b0406d4a7b8d181a065c46e7b0d63b49c8";
+export const V181_ADVERSARIAL_OUTPUT_SHA256 =
+  "f360f7b24b88bf3839e4c0aa7918ce64402b264294f07589202137618dd984fb";
 
 const assertPreGate = async () => {
   const contract = await verifyBlock2C5Contract();
@@ -48,6 +54,32 @@ const writeExclusive = async (path, contents) => {
   }
 };
 
+const withoutRetiredFinalFields = (metrics) =>
+  metrics.map((metric) => {
+    const expected = structuredClone(metric);
+    delete expected.monotony;
+    delete expected.strain;
+    return expected;
+  });
+
+const assertRetirementOnly = async (output) => {
+  const provisionalContents = await readFile(
+    PROVISIONAL_V181_ADVERSARIAL_OUTPUT_PATH,
+    "utf8",
+  );
+  assert.equal(
+    sha256Utf8(provisionalContents),
+    PROVISIONAL_V181_ADVERSARIAL_OUTPUT_SHA256,
+    "Fixture v18.1 provisional: SHA inesperado",
+  );
+  const expected = withoutRetiredFinalFields(JSON.parse(provisionalContents));
+  assert.equal(
+    serializeCanonicalJson(output),
+    serializeCanonicalJson(expected),
+    "Fixture v18.1 final: cambió algo distinto de monotony/strain",
+  );
+};
+
 export async function generateV181Adversarial(outputPath) {
   assertV181Filename(outputPath);
   await assertPreGate();
@@ -58,12 +90,10 @@ export async function generateV181Adversarial(outputPath) {
     current.outputContents,
     serializeCanonicalJson(current.output),
   );
+  await assertRetirementOnly(current.output);
   assert.equal(current.outputSha256, V181_ADVERSARIAL_OUTPUT_SHA256);
   await writeExclusive(outputPath, current.outputContents);
-  assert.equal(
-    sha256Utf8(await readFile(outputPath, "utf8")),
-    V181_ADVERSARIAL_OUTPUT_SHA256,
-  );
+  assert.equal(sha256Utf8(await readFile(outputPath, "utf8")), current.outputSha256);
   return {
     inputSha256: current.inputSha256,
     metrics: current.output.length,
@@ -80,17 +110,21 @@ export async function finalizeV181Adversarial(runAPath, runBPath) {
   assert.equal(runA, serializeCanonicalJson(JSON.parse(runA)));
   assert.equal(runB, serializeCanonicalJson(JSON.parse(runB)));
   assert.equal(runA, runB, "Fixture v18.1: A y B no son idénticos");
-  assert.equal(sha256Utf8(runA), V181_ADVERSARIAL_OUTPUT_SHA256);
+  const current = await runCurrentMetricsOnV18AdversarialFixture();
+  await assertRetirementOnly(current.output);
+  assert.equal(runA, current.outputContents);
+  const outputSha256 = sha256Utf8(runA);
+  assert.equal(outputSha256, V181_ADVERSARIAL_OUTPUT_SHA256);
   const finalPath = fileURLToPath(V181_ADVERSARIAL_OUTPUT_PATH);
   assertV181Filename(finalPath);
   await copyFile(runAPath, finalPath, constants.COPYFILE_EXCL);
   assert.equal(
     sha256Utf8(await readFile(finalPath, "utf8")),
-    V181_ADVERSARIAL_OUTPUT_SHA256,
+    outputSha256,
   );
   return {
     finalPath,
-    outputSha256: V181_ADVERSARIAL_OUTPUT_SHA256,
+    outputSha256,
   };
 }
 

@@ -15,9 +15,12 @@ test("C5 coincide exactamente con la matriz aprobada", async () => {
     monotonyNonNull: 756,
     strainNonNull: 756,
   });
-  assert.deepEqual(result.demo.after, { monotonyNull: 760, strainNull: 760 });
-  assert.deepEqual(result.demo.changedFields, { monotony: 756, strain: 756 });
-  assert.deepEqual(result.fixture.changedFields, { monotony: 9, strain: 9 });
+  assert.deepEqual(result.demo.after, {
+    monotonyAbsent: 760,
+    strainAbsent: 760,
+  });
+  assert.deepEqual(result.demo.changedFields, { monotony: 760, strain: 760 });
+  assert.deepEqual(result.fixture.changedFields, { monotony: 10, strain: 10 });
   assert.equal(result.demo.signals, 105);
   assert.deepEqual(result.demo.status, {
     OK: 663,
@@ -34,7 +37,7 @@ test("C5 coincide exactamente con la matriz aprobada", async () => {
   assert.equal(result.demo.statusDifferences, 0);
 });
 
-test("C5 conserva los campos compatibles como null y retira el cálculo público", async () => {
+test("C5 retira los campos muertos y el cálculo público", async () => {
   const domain = await withCurrentMetricsEngine(({ domain }) => domain);
   assert.equal("monotonyAndStrain" in domain, false);
   assert.equal("standardDeviation" in domain, false);
@@ -42,7 +45,8 @@ test("C5 conserva los campos compatibles como null y retira el cálculo público
   const result = await verifyBlock2C5Contract();
   assert.ok(
     result.fixture.rows.every(
-      (row) => row.monotony.after === null && row.strain.after === null,
+      (row) =>
+        row.monotony.after === "ABSENT" && row.strain.after === "ABSENT",
     ),
   );
 });
@@ -57,13 +61,12 @@ test("C5 elimina el vector falso, consumidores, umbral y microcopy activa", asyn
   ]);
   const page = withoutBlockComments(pageSource);
 
-  assert.match(orchestrator, /monotony:\s*null/);
-  assert.match(orchestrator, /strain:\s*null/);
-  assert.doesNotMatch(orchestrator, /sessionLoads|\bdaily\b|monotonyAndStrain/);
+  assert.doesNotMatch(
+    orchestrator,
+    /sessionLoads|\bdaily\b|monotonyAndStrain|\bmonotony\b|\bstrain\b/,
+  );
   assert.doesNotMatch(primitives, /monotonyAndStrain|standardDeviation/);
-  assert.match(types, /monotony:\s*number \| null/);
-  assert.match(types, /strain:\s*number \| null/);
-  assert.doesNotMatch(types, /highMonotony/);
+  assert.doesNotMatch(types, /\bmonotony\b|\bstrain\b|highMonotony/);
   assert.doesNotMatch(page, /\.monotony\b|\.strain\b|highMonotony/);
   assert.doesNotMatch(page, /Monoton[ií]a|\bstrain\b/i);
   assert.doesNotMatch(

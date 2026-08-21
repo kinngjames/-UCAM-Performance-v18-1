@@ -162,8 +162,6 @@ export type PlayerMetric = {
   wellbeingDone: boolean;
   pending: number;
   recordCompleteness: RecordCompleteness;
-  monotony: number | null;
-  strain: number | null;
   zRpe: number | null;
   zSleep: number | null;
   personalRpe: number | null;

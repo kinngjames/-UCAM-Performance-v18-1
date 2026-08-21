@@ -8,12 +8,20 @@ import { serializeCanonicalJson, sha256Utf8 } from "./canonical-json.mjs";
 import { buildV18Baseline, V18_DATASET_SHA256 } from "./v18-baseline.mjs";
 import { V18_GOLDEN_V2_SHA256 } from "./v18-golden.mjs";
 
-export const V181_GOLDEN_PATH = new URL(
+export const PROVISIONAL_V181_GOLDEN_PATH = new URL(
   "../tests/fixtures/v18.1-player-metrics.json",
   import.meta.url,
 );
+export const PROVISIONAL_V181_GOLDEN_SHA256 =
+  "7d72932658949742d528e9d2c904e3fed21f0075326044b4e456e2dda40e8b58";
+export const V181_GOLDEN_SHA256 =
+  "08d8c2a0d681f44b71cf0264e49891eb44ce455c792306370382c0ab5fb62c9e";
+export const V181_GOLDEN_PATH = new URL(
+  "../tests/fixtures/v18.1-final-player-metrics.json",
+  import.meta.url,
+);
 export const V181_MANIFEST_PATH = new URL(
-  "../tests/fixtures/v18.1-player-metrics.manifest.json",
+  "../tests/fixtures/v18.1-final-player-metrics.manifest.json",
   import.meta.url,
 );
 
@@ -21,8 +29,7 @@ const V18_FIXTURE_INPUT_SHA256 =
   "00fb9f767a9155d637ef5b68154d4f663db3b67a7f01e0a0442263b5ee76e23b";
 const V18_FIXTURE_OUTPUT_SHA256 =
   "aa5090b824c00635966fb42edc77f8fe544b093bf278ba8e4210ba4353d5bd6d";
-const BLOCK2_FINAL_TREE_SHA1 =
-  "840748353257ad865e0f10c16bf2cdda171660ab";
+const RETIRED_FINAL_FIELDS = ["monotony", "strain"];
 
 const statusCounts = (metrics) =>
   Object.fromEntries(
@@ -76,6 +83,28 @@ const assertV181Filename = (path) => {
   }
 };
 
+const withoutRetiredFinalFields = (metrics) =>
+  metrics.map((metric) => {
+    const expected = structuredClone(metric);
+    for (const field of RETIRED_FINAL_FIELDS) delete expected[field];
+    return expected;
+  });
+
+const assertRetirementOnly = async (metrics) => {
+  const provisionalContents = await readFile(PROVISIONAL_V181_GOLDEN_PATH, "utf8");
+  assert.equal(
+    sha256Utf8(provisionalContents),
+    PROVISIONAL_V181_GOLDEN_SHA256,
+    "Golden v18.1 provisional: SHA inesperado",
+  );
+  const expected = withoutRetiredFinalFields(JSON.parse(provisionalContents));
+  assert.equal(
+    serializeCanonicalJson(metrics),
+    serializeCanonicalJson(expected),
+    "Golden v18.1 final: la retirada cambia algo distinto de monotony/strain",
+  );
+};
+
 export async function generateV181Golden(outputPath) {
   assertV181Filename(outputPath);
   await assertPreGate();
@@ -95,8 +124,10 @@ export async function generateV181Golden(outputPath) {
     VIGILAR: 86,
     null: 4,
   });
+  await assertRetirementOnly(baseline.metrics);
   const contents = serializeCanonicalJson(baseline.metrics);
   const goldenSha256 = sha256Utf8(contents);
+  assert.equal(goldenSha256, V181_GOLDEN_SHA256);
   await writeExclusive(outputPath, contents);
   assert.equal(sha256Utf8(await readFile(outputPath, "utf8")), goldenSha256);
   return { goldenSha256, metrics: baseline.metrics.length };
@@ -113,6 +144,10 @@ export async function finalizeV181Golden(runAPath, runBPath) {
   const shaA = sha256Utf8(runA);
   const shaB = sha256Utf8(runB);
   assert.equal(shaA, shaB, "Golden v18.1: A y B no son idénticos");
+  assert.equal(shaA, V181_GOLDEN_SHA256);
+  const baseline = await buildV18Baseline();
+  await assertRetirementOnly(baseline.metrics);
+  assert.equal(runA, serializeCanonicalJson(baseline.metrics));
 
   const finalPath = fileURLToPath(V181_GOLDEN_PATH);
   const manifestPath = fileURLToPath(V181_MANIFEST_PATH);
@@ -123,7 +158,6 @@ export async function finalizeV181Golden(runAPath, runBPath) {
   try {
     const metrics = JSON.parse(runA);
     const manifest = {
-      block2FinalTreeSha1: BLOCK2_FINAL_TREE_SHA1,
       datasetSha256: V18_DATASET_SHA256,
       format: "canonical-json-v1",
       goldenFilename: basename(finalPath),
@@ -134,12 +168,18 @@ export async function finalizeV181Golden(runAPath, runBPath) {
         goldenSha256: V18_GOLDEN_V2_SHA256,
       },
       metrics: metrics.length,
+      playerMetricFields: Object.keys(metrics[0]).sort(),
+      provisionalV181: {
+        goldenFilename: basename(fileURLToPath(PROVISIONAL_V181_GOLDEN_PATH)),
+        goldenSha256: PROVISIONAL_V181_GOLDEN_SHA256,
+        retiredFields: RETIRED_FINAL_FIELDS,
+      },
       signals: metrics.reduce(
         (total, metric) => total + metric.signals.length,
         0,
       ),
       status: statusCounts(metrics),
-      version: "v18.1",
+      version: "v18.1-final",
     };
     await writeExclusive(manifestPath, serializeCanonicalJson(manifest));
     manifestWritten = true;

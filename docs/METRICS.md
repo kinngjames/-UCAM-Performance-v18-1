@@ -83,15 +83,14 @@ variación_% = (actual − anterior) / anterior × 100
 
 - No se calcula si falta cualquiera de los valores o si el anterior es cero.
 
-## Campos de compatibilidad retirados en C5
+## Métricas retiradas en C5
 
-`monotony` y `strain` permanecen temporalmente en `PlayerMetric` únicamente
-para conservar compatibilidad de contrato. Ambos valen siempre `null`.
+`monotony` y `strain` no forman parte de `PlayerMetric` ni del contrato activo.
 
 - No se construye un vector que trate sesiones, partido, compensatoria y un
   cero de relleno como si fueran siete días.
 - No existe cálculo, señal, decisión, filtro, ordenación ni consumidor visible
-  asociado a estos campos.
+  asociado a estas métricas.
 - No se presenta un sustituto mientras no exista carga distribuida por días
   reales con un contrato defendible.
 
