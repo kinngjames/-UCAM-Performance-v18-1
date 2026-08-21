@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { serializeCanonicalJson } from "./canonical-json.mjs";
+import { readFile } from "node:fs/promises";
+import { serializeCanonicalJson, sha256Utf8 } from "./canonical-json.mjs";
 import {
   buildC1ExpectedCollection,
   C1_IMMUTABLE_FIELDS,
@@ -10,7 +11,6 @@ import { buildC6ExpectedCollection } from "./block2-c6-contract.mjs";
 import { buildC7ExpectedCollection } from "./block2-c7-contract.mjs";
 import {
   readVerifiedV18AdversarialFixture,
-  runCurrentMetricsOnV18AdversarialFixture,
 } from "./v18-adversarial.mjs";
 import { buildV18Baseline, V18_DATASET_SHA256 } from "./v18-baseline.mjs";
 import { readVerifiedV18GoldenV2 } from "./v18-golden.mjs";
@@ -147,11 +147,31 @@ const buildC4Stages = ({ historicalGolden, historicalFixture, demoInputs }) => {
 export async function verifyBlock2C5Contract() {
   const historicalGolden = await readVerifiedV18GoldenV2();
   const historicalFixture = await readVerifiedV18AdversarialFixture();
-  const [currentDemo, currentFixture] = await Promise.all([
+  const [currentDemo, storedDemoContents, storedFixtureContents] = await Promise.all([
     buildV18Baseline(),
-    runCurrentMetricsOnV18AdversarialFixture(),
+    readFile(
+      new URL("../tests/fixtures/v18.1-final-player-metrics.json", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../tests/fixtures/v18.1-final-adversarial-output.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
   ]);
   assert.equal(currentDemo.datasetSha256, V18_DATASET_SHA256);
+  assert.equal(
+    sha256Utf8(storedDemoContents),
+    "08d8c2a0d681f44b71cf0264e49891eb44ce455c792306370382c0ab5fb62c9e",
+  );
+  assert.equal(
+    sha256Utf8(storedFixtureContents),
+    "f360f7b24b88bf3839e4c0aa7918ce64402b264294f07589202137618dd984fb",
+  );
+  const c5DemoMetrics = JSON.parse(storedDemoContents);
+  const c5FixtureMetrics = JSON.parse(storedFixtureContents);
 
   const c4 = buildC4Stages({
     historicalFixture,
@@ -159,13 +179,13 @@ export async function verifyBlock2C5Contract() {
     demoInputs: currentDemo.inputs,
   });
   const demo = verifyCollection({
-    actual: currentDemo.metrics,
+    actual: c5DemoMetrics,
     c4Expected: c4.demo,
     historical: historicalGolden.metrics,
     label: "DEMO C5",
   });
   const fixture = verifyCollection({
-    actual: currentFixture.output,
+    actual: c5FixtureMetrics,
     c4Expected: c4.fixture,
     historical: historicalFixture.output,
     label: "Fixture C5",
@@ -179,7 +199,7 @@ export async function verifyBlock2C5Contract() {
   assert.deepEqual(demo.changedFields, { monotony: 760, strain: 760 });
   assert.deepEqual(fixture.changedFields, { monotony: 10, strain: 10 });
 
-  const fixtureRows = currentFixture.output.map((metric, index) => ({
+  const fixtureRows = c5FixtureMetrics.map((metric, index) => ({
     id: `R${index + 1}`,
     monotony: {
       after: Object.hasOwn(metric, "monotony") ? metric.monotony : "ABSENT",
@@ -207,11 +227,11 @@ export async function verifyBlock2C5Contract() {
     ),
   );
 
-  const signals = currentDemo.metrics.reduce(
+  const signals = c5DemoMetrics.reduce(
     (total, metric) => total + metric.signals.length,
     0,
   );
-  const status = countBy(currentDemo.metrics, "status");
+  const status = countBy(c5DemoMetrics, "status");
   assert.equal(signals, 105);
   assert.deepEqual(status, {
     OK: 663,

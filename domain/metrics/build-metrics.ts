@@ -257,8 +257,6 @@ export function buildMetrics({
         reasons,
         signals,
       };
-      (metric as PlayerMetric & { sessions: number }).sessions =
-        metric.completed;
       result.set(`${week.id}-${player.id}`, metric);
       history.push(metric);
     }

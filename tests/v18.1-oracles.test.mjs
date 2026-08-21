@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { verifyBlock2C5Contract } from "../scripts/block2-c5-contract.mjs";
 import {
   serializeCanonicalJson,
   sha256Utf8,
@@ -22,6 +21,11 @@ import {
   V181_GOLDEN_PATH,
   V181_MANIFEST_PATH,
 } from "../scripts/v18.1-golden.mjs";
+import {
+  V181_F2_GOLDEN_PATH,
+  V181_F2_GOLDEN_SHA256,
+  verifyV181F2Contract,
+} from "../scripts/v18.1-f2-golden.mjs";
 
 const V181_FIELDS = [
   "availability",
@@ -65,6 +69,7 @@ const V181_FIELDS = [
   "zRpe",
   "zSleep",
 ];
+const V181_F2_FIELDS = V181_FIELDS.filter((field) => field !== "sessions");
 const REMOVED_FIELDS = [
   "chronic",
   "compliance",
@@ -73,6 +78,7 @@ const REMOVED_FIELDS = [
   "plannedTotalLoad",
   "plannedTrainingLoad",
   "ratio",
+  "sessions",
   "strain",
   "streak",
 ];
@@ -109,7 +115,6 @@ const UNCHANGED_FIELDS = [
   "playerId",
   "rpeCompleted",
   "rpeExpected",
-  "sessions",
   "sleep",
   "stress",
   "trained",
@@ -167,8 +172,8 @@ test("los seis anclajes y ambos outputs v18.1 conservan bytes canónicos", async
   });
 });
 
-test("el golden v18.1 fija exactamente el contrato público de PlayerMetric", async () => {
-  const metrics = JSON.parse(await readFile(V181_GOLDEN_PATH, "utf8"));
+test("el golden F2 fija exactamente el contrato público de PlayerMetric", async () => {
+  const metrics = JSON.parse(await readFile(V181_F2_GOLDEN_PATH, "utf8"));
   assert.equal(metrics.length, 760);
   assert.equal(new Set(metrics.map((metric) => metric.playerId)).size, 20);
   assert.equal(new Set(metrics.map((metric) => metric.weekId)).size, 38);
@@ -176,7 +181,7 @@ test("el golden v18.1 fija exactamente el contrato público de PlayerMetric", as
     new Set(metrics.map((metric) => Object.keys(metric).sort().join("|"))).size,
     1,
   );
-  assert.deepEqual(Object.keys(metrics[0]).sort(), V181_FIELDS);
+  assert.deepEqual(Object.keys(metrics[0]).sort(), V181_F2_FIELDS);
   for (const metric of metrics) {
     for (const field of REMOVED_FIELDS) {
       assert.equal(Object.hasOwn(metric, field), false, `${metric.weekId}-${metric.playerId}: ${field}`);
@@ -185,6 +190,7 @@ test("el golden v18.1 fija exactamente el contrato público de PlayerMetric", as
     assert.equal(Object.hasOwn(metric, "recordCompleteness"), true);
     assert.equal(Object.hasOwn(metric, "monotony"), false);
     assert.equal(Object.hasOwn(metric, "strain"), false);
+    assert.equal(Object.hasOwn(metric, "sessions"), false);
   }
 });
 
@@ -194,7 +200,7 @@ test("la clasificación de campos v18 a v18.1 es completa y exacta", async () =>
       new URL("./fixtures/v18-original-player-metrics.v2.json", import.meta.url),
       "utf8",
     ).then(JSON.parse),
-    readFile(V181_GOLDEN_PATH, "utf8").then(JSON.parse),
+    readFile(V181_F2_GOLDEN_PATH, "utf8").then(JSON.parse),
   ]);
   const historicalFields = new Set(Object.keys(historical[0]));
   const currentFields = new Set(Object.keys(current[0]));
@@ -229,22 +235,30 @@ test("la clasificación de campos v18 a v18.1 es completa y exacta", async () =>
   assert.deepEqual(unchanged.sort(), UNCHANGED_FIELDS);
 });
 
-test("golden y fixture v18.1 proceden del motor que pasa la matriz final", async () => {
-  const contract = await verifyBlock2C5Contract();
-  assert.equal(contract.demo.immutableDifferences, 0);
-  assert.equal(contract.demo.unexpectedDifferences, 0);
-  assert.equal(contract.fixture.immutableDifferences, 0);
-  assert.equal(contract.fixture.unexpectedDifferences, 0);
+test("golden F2 procede del motor y el fixture v18.1 previo queda histórico", async () => {
+  const contract = await verifyV181F2Contract();
+  assert.equal(contract.immutableDifferences, 0);
+  assert.equal(contract.unexpectedDifferences, 0);
 
   const [baseline, fixture, goldenContents, fixtureContents] = await Promise.all([
     buildV18Baseline(),
     runCurrentMetricsOnV18AdversarialFixture(),
-    readFile(V181_GOLDEN_PATH, "utf8"),
+    readFile(V181_F2_GOLDEN_PATH, "utf8"),
     readFile(V181_ADVERSARIAL_OUTPUT_PATH, "utf8"),
   ]);
   assert.equal(serializeCanonicalJson(baseline.metrics), goldenContents);
-  assert.equal(fixture.outputContents, fixtureContents);
+  const expectedFixture = JSON.parse(fixtureContents).map((metric) => {
+    const withoutAlias = structuredClone(metric);
+    delete withoutAlias.sessions;
+    return withoutAlias;
+  });
+  assert.equal(
+    fixture.outputContents,
+    serializeCanonicalJson(expectedFixture),
+  );
   assert.equal(fixture.output.length, 10);
+  assert.equal(sha256Utf8(goldenContents), V181_F2_GOLDEN_SHA256);
+  assert.equal(sha256Utf8(fixtureContents), V181_ADVERSARIAL_OUTPUT_SHA256);
 
   const [pageSource, harnessSource] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),

@@ -75,6 +75,11 @@ const EXPECTED_OUTPUT = [
     zSleep: null,
   },
 ];
+const CURRENT_EXPECTED_OUTPUT = EXPECTED_OUTPUT.map((metric) => {
+  const current = structuredClone(metric);
+  delete current.sessions;
+  return current;
+});
 
 const assertExplicitV2Filename = (path) => {
   const filename = basename(path);
@@ -108,7 +113,7 @@ const runCurrentV2 = async () => {
   });
   assert.equal(
     serializeCanonicalJson(output),
-    serializeCanonicalJson(EXPECTED_OUTPUT),
+    serializeCanonicalJson(CURRENT_EXPECTED_OUTPUT),
     "Fixture v18.1 v2: el motor incumple la matriz contractual",
   );
   return {
@@ -122,11 +127,12 @@ export const proveV181AdversarialV2Sensitivity = (output) => {
   const mutant = structuredClone(output);
   mutant[0].status = null;
   assert.throws(
-    () => assert.deepEqual(mutant, EXPECTED_OUTPUT),
+    () => assert.deepEqual(mutant, CURRENT_EXPECTED_OUTPUT),
     /Expected values to be strictly deep-equal/,
   );
   assert.equal(
-    serializeCanonicalJson(mutant) === serializeCanonicalJson(EXPECTED_OUTPUT),
+    serializeCanonicalJson(mutant) ===
+      serializeCanonicalJson(CURRENT_EXPECTED_OUTPUT),
     false,
   );
   return {
@@ -180,12 +186,22 @@ export async function verifyV181AdversarialV2() {
   const current = await runCurrentV2();
   const storedContents = await readFile(V181_ADVERSARIAL_V2_OUTPUT_PATH, "utf8");
   assert.equal(storedContents, serializeCanonicalJson(JSON.parse(storedContents)));
-  assert.equal(storedContents, current.outputContents);
   assert.equal(sha256Utf8(storedContents), V181_ADVERSARIAL_V2_OUTPUT_SHA256);
+  assert.equal(
+    current.outputContents,
+    serializeCanonicalJson(
+      JSON.parse(storedContents).map((metric) => {
+        const withoutAlias = structuredClone(metric);
+        delete withoutAlias.sessions;
+        return withoutAlias;
+      }),
+    ),
+  );
   return {
     inputSha256: current.inputSha256,
     metrics: current.output.length,
     output: current.output,
+    currentOutputSha256: sha256Utf8(current.outputContents),
     outputSha256: sha256Utf8(storedContents),
     sensitivity: proveV181AdversarialV2Sensitivity(current.output),
   };

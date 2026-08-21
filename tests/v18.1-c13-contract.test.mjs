@@ -12,10 +12,15 @@ test("C13 conserva el DEMO y fija componentes desconocidos como null", async () 
     buildV18Baseline(),
     read("./fixtures/v18.1-final-player-metrics.json"),
   ]);
+  const expected = JSON.parse(golden).map((metric) => {
+    const withoutAlias = structuredClone(metric);
+    delete withoutAlias.sessions;
+    return withoutAlias;
+  });
   assert.equal(
     serializeCanonicalJson(baseline.metrics),
-    golden,
-    "C13 no puede cambiar el DEMO porque no contiene esfuerzos incompletos",
+    serializeCanonicalJson(expected),
+    "tras C12, C13 solo admite además la retirada estructural de sessions",
   );
   assert.equal(
     sha256Utf8(golden),
