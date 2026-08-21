@@ -1,0 +1,21 @@
+{
+  "block2FinalTreeSha1": "840748353257ad865e0f10c16bf2cdda171660ab",
+  "datasetSha256": "2d30cadd2469c1a6e4c3eef2331a92bf424795ff50826d319a2b1c57150a509b",
+  "format": "canonical-json-v1",
+  "goldenFilename": "v18.1-player-metrics.json",
+  "goldenSha256": "7d72932658949742d528e9d2c904e3fed21f0075326044b4e456e2dda40e8b58",
+  "historicalV18": {
+    "fixtureInputSha256": "00fb9f767a9155d637ef5b68154d4f663db3b67a7f01e0a0442263b5ee76e23b",
+    "fixtureOutputSha256": "aa5090b824c00635966fb42edc77f8fe544b093bf278ba8e4210ba4353d5bd6d",
+    "goldenSha256": "c24421e7afed99ee483930a340e724440d8285a361fa26b2673622de69d5b7b4"
+  },
+  "metrics": 760,
+  "signals": 105,
+  "status": {
+    "OK": 663,
+    "REVISAR": 7,
+    "VIGILAR": 86,
+    "null": 4
+  },
+  "version": "v18.1"
+}
