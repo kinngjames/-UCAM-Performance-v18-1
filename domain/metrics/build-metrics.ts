@@ -113,7 +113,11 @@ export function buildMetrics({
         ? loadForCompleteEffort(match?.rpe, match?.minutes)
         : null;
       const compensatoryExpected = Boolean(
-        matchKnown && match?.compensatory && match.compensatoryMinutes > 0,
+        matchKnown &&
+          match?.compensatory &&
+          ((match.compensatoryMinutes != null &&
+            match.compensatoryMinutes > 0) ||
+            match.compensatoryRpe != null),
       );
       const compensatoryLoadValue = compensatoryExpected
         ? loadForCompleteEffort(

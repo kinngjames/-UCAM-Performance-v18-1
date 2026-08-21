@@ -10,14 +10,20 @@ export const V181_ADVERSARIAL_V3_INPUT_PATH = new URL(
   "../tests/fixtures/v18.1-adversarial-v3-input.json",
   import.meta.url,
 );
-export const V181_ADVERSARIAL_V3_OUTPUT_PATH = new URL(
+export const V181_ADVERSARIAL_V3_HISTORICAL_OUTPUT_PATH = new URL(
   "../tests/fixtures/v18.1-adversarial-v3-output.json",
+  import.meta.url,
+);
+export const V181_ADVERSARIAL_V3_OUTPUT_PATH = new URL(
+  "../tests/fixtures/v18.1-adversarial-v3-m3-output.json",
   import.meta.url,
 );
 export const V181_ADVERSARIAL_V3_INPUT_SHA256 =
   "95b8fbe772bbd42ec12f33120e12c347871baa5bc2611cfc575a207e9ebdd6ec";
-export const V181_ADVERSARIAL_V3_OUTPUT_SHA256 =
+export const V181_ADVERSARIAL_V3_HISTORICAL_OUTPUT_SHA256 =
   "98b252d32e9c933d4942f66ca00d4b4af76ad3ad203c0696be70a85108c971d3";
+export const V181_ADVERSARIAL_V3_OUTPUT_SHA256 =
+  "43b4ed2cab8f0811f344db62e9cfb487067da456e8988626b00612579948cc55";
 
 const thresholds = (overrides = {}) => ({
   baselineWeeks: 12,
@@ -264,6 +270,15 @@ const writeExclusive = async (path, contents) => {
 
 export async function verifyV181AdversarialV3() {
   const { contents: inputContents, input } = await readVerifiedInput();
+  const historical = await readFile(
+    V181_ADVERSARIAL_V3_HISTORICAL_OUTPUT_PATH,
+    "utf8",
+  );
+  assert.equal(historical, serializeCanonicalJson(JSON.parse(historical)));
+  assert.equal(
+    sha256Utf8(historical),
+    V181_ADVERSARIAL_V3_HISTORICAL_OUTPUT_SHA256,
+  );
   const output = await runCurrent(input);
   const outputContents = serializeCanonicalJson(output);
   const stored = await readFile(V181_ADVERSARIAL_V3_OUTPUT_PATH, "utf8");
@@ -275,6 +290,13 @@ export async function verifyV181AdversarialV3() {
     outputSha256: sha256Utf8(outputContents),
     sensitivity: await proveV181AdversarialV3Sensitivity(),
   };
+}
+
+export async function generateCurrentV181AdversarialV3(outputPath) {
+  const { input } = await readVerifiedInput();
+  const outputContents = serializeCanonicalJson(await runCurrent(input));
+  await writeExclusive(outputPath, outputContents);
+  return { outputSha256: sha256Utf8(outputContents) };
 }
 
 async function bootstrap(inputPath, outputPath) {
@@ -294,6 +316,14 @@ async function main() {
   if (command === "--bootstrap" && args.length === 2) {
     process.stdout.write(
       `${JSON.stringify(await bootstrap(resolve(args[0]), resolve(args[1])))}\n`,
+    );
+    return;
+  }
+  if (command === "--generate-output" && args.length === 1) {
+    process.stdout.write(
+      `${JSON.stringify(
+        await generateCurrentV181AdversarialV3(resolve(args[0])),
+      )}\n`,
     );
     return;
   }

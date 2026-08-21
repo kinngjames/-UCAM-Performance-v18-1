@@ -54,7 +54,7 @@ carga_total = carga_entrenamiento + carga_competición + carga_compensatoria
 
 ## Completitud jugador-semana
 
-La clasificación se calcula sobre los esfuerzos esperados de una semana: sesiones con `ENTRENÓ`, partido con minutos positivos y compensatoria declarada.
+La clasificación se calcula sobre los esfuerzos esperados de una semana: sesiones con `ENTRENÓ`, partido con evidencia de participación y compensatoria declarada con evidencia de esfuerzo. En una compensatoria, minutos positivos o un RPE registrado bastan para reconocer que el esfuerzo existió; si falta el otro componente, el esfuerzo queda incompleto.
 
 | Estado | Definición exacta | Uso colectivo |
 | --- | --- | --- |

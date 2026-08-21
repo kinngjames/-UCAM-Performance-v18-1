@@ -15,12 +15,14 @@ test("fixture v3 fija guardas nulas, configuración y esfuerzos incompletos", as
     byCase.get("T2-ABOVE").signals.map(({ key }) => key),
     ["fatigue", "pain"],
   );
-  for (const id of ["M1", "M2", "M4"])
+  for (const id of ["M1", "M2", "M3", "M4"])
     assert.equal(byCase.get(id).loadCompleteness, "PARTIAL");
-  assert.equal(
-    byCase.get("M3").loadCompleteness,
-    "COMPLETE",
-    "v18.1 no reconoce compensatoria esperada si faltan sus minutos",
+  assert.deepEqual(
+    [
+      byCase.get("M3").expectedLoadEfforts,
+      byCase.get("M3").completedLoadEfforts,
+    ],
+    [2, 1],
   );
 });
 
