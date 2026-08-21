@@ -1,0 +1,53 @@
+{
+  "availability": [
+    {
+      "note": "Sin exposición esperada; bienestar voluntario",
+      "playerId": "ADV-VOLUNTARY",
+      "value": "NO DISPONIBLE",
+      "weekId": 1
+    }
+  ],
+  "calendar": [
+    {
+      "id": 1
+    }
+  ],
+  "matches": [],
+  "players": [
+    {
+      "accessActive": true,
+      "active": true,
+      "birthDate": "2009-01-01",
+      "dominantFoot": "DERECHA",
+      "id": "ADV-VOLUNTARY",
+      "name": "ADVERSARIAL VOLUNTARIO",
+      "notes": "Fixture adversarial v18.1 v2",
+      "number": 93,
+      "position": "MEDIO"
+    }
+  ],
+  "sessions": [],
+  "thresholds": {
+    "baselineWeeks": 8,
+    "criticalSleep": 6.5,
+    "highFatigue": 4,
+    "highRpe": 8,
+    "highStress": 4,
+    "lowMood": 2,
+    "lowSleep": 8,
+    "relevantPain": 4,
+    "zScore": 1.5
+  },
+  "wellbeing": [
+    {
+      "fatigue": 2,
+      "mood": 4,
+      "notes": "Registro voluntario válido",
+      "pain": 5,
+      "playerId": "ADV-VOLUNTARY",
+      "sleep": 8,
+      "stress": 2,
+      "weekId": 1
+    }
+  ]
+}

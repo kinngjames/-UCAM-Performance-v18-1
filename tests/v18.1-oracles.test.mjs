@@ -254,6 +254,60 @@ test("golden y fixture v18.1 proceden del motor que pasa la matriz final", async
   assert.match(harnessSource, /ssrLoadModule\("\/domain\/metrics\/index\.ts"\)/);
 });
 
+test("fixture v18.1 conserva C1–C6 y solo retira monotony/strain", async () => {
+  const [input, provisional, current] = await Promise.all([
+    readFile(
+      new URL("./fixtures/v18-adversarial-input.json", import.meta.url),
+      "utf8",
+    ).then(JSON.parse),
+    readFile(
+      new URL("./fixtures/v18.1-adversarial-output.json", import.meta.url),
+      "utf8",
+    ).then(JSON.parse),
+    readFile(V181_ADVERSARIAL_OUTPUT_PATH, "utf8").then(JSON.parse),
+  ]);
+  const expected = provisional.map((metric) => {
+    const withoutRetired = structuredClone(metric);
+    delete withoutRetired.monotony;
+    delete withoutRetired.strain;
+    return withoutRetired;
+  });
+  assert.equal(serializeCanonicalJson(current), serializeCanonicalJson(expected));
+
+  const metricAt = (caseId) => {
+    const [weekId, ...playerParts] = input.caseMetricKeys[caseId].split("-");
+    const playerId = playerParts.join("-");
+    const metric = current.find(
+      (item) => item.weekId === Number(weekId) && item.playerId === playerId,
+    );
+    assert.ok(metric, `falta ${caseId}`);
+    return metric;
+  };
+  const c1 = metricAt("C1");
+  assert.deepEqual(
+    [c1.wellbeingExpected, c1.pending, c1.recordCompleteness, c1.status],
+    [0, 0, "NOT_EXPECTED", null],
+  );
+  const c2 = metricAt("C2");
+  assert.equal(c2.trainingLoad, 756);
+  assert.equal(Object.hasOwn(c2, "plannedTrainingLoad"), false);
+  assert.equal(Object.hasOwn(c2, "plannedTotalLoad"), false);
+  const c3 = metricAt("C3");
+  assert.deepEqual([c3.load, c3.loadCompleteness], [980, "PARTIAL"]);
+  for (const field of ["ratio", "chronic", "ewma"])
+    assert.equal(Object.hasOwn(c3, field), false);
+  const c4 = metricAt("C4");
+  assert.deepEqual([c4.zRpe, c4.status, c4.signals], [2.31, "OK", []]);
+  const c5 = metricAt("C5");
+  assert.equal(Object.hasOwn(c5, "monotony"), false);
+  assert.equal(Object.hasOwn(c5, "strain"), false);
+  const c6 = metricAt("C6");
+  assert.deepEqual(
+    [c6.pending, c6.recordCompleteness, c6.status, c6.signals],
+    [1, "PARTIAL", "OK", []],
+  );
+});
+
 test("la escritura del golden exige el verificador antes de generar bytes", async () => {
   const source = await readFile(
     new URL("../scripts/v18.1-golden.mjs", import.meta.url),

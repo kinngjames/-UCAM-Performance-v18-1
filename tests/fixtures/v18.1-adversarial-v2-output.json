@@ -1,0 +1,57 @@
+[
+  {
+    "availability": "NO DISPONIBLE",
+    "availabilityKnown": true,
+    "avgRpe": null,
+    "compensatoryLoad": 0,
+    "completed": 0,
+    "completedLoadEfforts": 0,
+    "convocation": "NO CONVOCADO",
+    "expectedLoadEfforts": 0,
+    "fatigue": 2,
+    "load": 0,
+    "loadCompleteness": "NO_EXPOSURE",
+    "matchLoad": 0,
+    "matchMinutes": null,
+    "matchRpe": null,
+    "minutes": 0,
+    "mood": 4,
+    "pain": 5,
+    "pending": 0,
+    "personalRpe": null,
+    "personalSleep": null,
+    "playerId": "ADV-VOLUNTARY",
+    "reasons": [
+      "Dolor relevante registrado"
+    ],
+    "recordCompleteness": "NOT_EXPECTED",
+    "rpeCompleted": 0,
+    "rpeExpected": 0,
+    "rpeRange": null,
+    "sessions": 0,
+    "signals": [
+      {
+        "action": "Revisar zona, limitación y evolución.",
+        "data": "5,0/10",
+        "difference": "+1,0",
+        "explanation": "Es un dato comunicado por el jugador; no constituye un diagnóstico.",
+        "key": "pain",
+        "label": "Dolor relevante registrado",
+        "reference": "Umbral 4/10",
+        "severity": "review"
+      }
+    ],
+    "sleep": 8,
+    "sleepRange": null,
+    "status": "REVISAR",
+    "stress": 2,
+    "trained": 0,
+    "trainingLoad": 0,
+    "trainingMinutes": 0,
+    "weekId": 1,
+    "wellbeingDone": true,
+    "wellbeingExpected": 0,
+    "zRpe": null,
+    "zSleep": null
+  }
+]
