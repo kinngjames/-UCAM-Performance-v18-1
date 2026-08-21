@@ -143,8 +143,8 @@ export type PlayerMetric = {
   availability: Availability;
   avgRpe: number | null;
   trainingLoad: number;
-  matchLoad: number;
-  compensatoryLoad: number;
+  matchLoad: number | null;
+  compensatoryLoad: number | null;
   load: number;
   trainingMinutes: number;
   matchMinutes: number | null;

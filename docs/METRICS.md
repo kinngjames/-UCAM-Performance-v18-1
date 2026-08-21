@@ -51,6 +51,10 @@ carga_total = carga_entrenamiento + carga_competición + carga_compensatoria
 
 - Periodo: jornada/semana seleccionada.
 - Lugares: HOY, Carga, ficha, evolución e informes.
+- `load` es la suma de los componentes conocidos. Un componente ausente no
+  suma y conserva `null` en su propio campo; `loadCompleteness` indica si esa
+  suma está completa. El total conocido nunca convierte el componente
+  almacenado en cero.
 
 ## Completitud jugador-semana
 

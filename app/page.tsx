@@ -164,6 +164,14 @@ const compact = (value: number | null) =>
   value == null
     ? "—"
     : value.toLocaleString("es-ES", { maximumFractionDigits: 0 });
+type CompleteLoadMetric = PlayerMetric & {
+  loadCompleteness: "COMPLETE";
+  matchLoad: number;
+  compensatoryLoad: number;
+};
+const hasInterpretableLoad = (
+  metric: PlayerMetric | undefined,
+): metric is CompleteLoadMetric => metric?.loadCompleteness === "COMPLETE";
 const rpeRegistrationText = (metric: PlayerMetric) =>
   `RPE ${metric.rpeCompleted}/${metric.rpeExpected}`;
 const wellbeingRegistrationText = (metric: PlayerMetric) =>
@@ -777,7 +785,7 @@ function MetricExplorer({
     stress: [1, 5],
   };
   const chartValue = (item: PlayerMetric) => {
-    if (metricKey === "load" && item.loadCompleteness === "NO_DATA") return null;
+    if (metricKey === "load" && !hasInterpretableLoad(item)) return null;
     if (
       ["rpe", "load"].includes(metricKey) &&
       item.rpeExpected > 0 &&
@@ -1129,8 +1137,10 @@ function TodayDashboard({
       label: calendarWeek.label,
       value: mean(
         players.map(
-          (player) =>
-            metrics.get(`${calendarWeek.id}-${player.id}`)?.load ?? null,
+          (player) => {
+            const metric = metrics.get(`${calendarWeek.id}-${player.id}`);
+            return hasInterpretableLoad(metric) ? metric.load : null;
+          },
         ),
       ),
     }),
@@ -3514,8 +3524,6 @@ type TeamLoadPoint = {
   coverage: ReturnType<typeof summarizeLoadCoverage>;
 };
 
-const hasInterpretableLoad = (metric: PlayerMetric | undefined) =>
-  metric?.loadCompleteness === "COMPLETE";
 const loadText = (metric: PlayerMetric) =>
   metric.loadCompleteness === "COMPLETE"
     ? `${compact(metric.load)} UA`
@@ -3561,7 +3569,7 @@ function TeamLoadChart({
   const mobileData = data.slice(-5);
   const active = data[Math.min(activeIndex, Math.max(0, data.length - 1))];
   const widthFor = (value: number | null) =>
-    `${Math.min(100, Math.max(0, ((value ?? 0) / scaleMax) * 100))}%`;
+    `${value == null ? 0 : Math.min(100, Math.max(0, (value / scaleMax) * 100))}%`;
 
   return (
     <>
@@ -3597,12 +3605,15 @@ function TeamLoadChart({
         })}
         {data.map((item, index) => {
           const x = left + step * index + step / 2;
-          const training = item.training ?? 0;
-          const match = item.match ?? 0;
-          const compensatory = item.compensatory ?? 0;
-          const trainingHeight = (training / scaleMax) * plotHeight;
-          const matchHeight = (match / scaleMax) * plotHeight;
-          const compensatoryHeight = (compensatory / scaleMax) * plotHeight;
+          const training = item.training;
+          const match = item.match;
+          const compensatory = item.compensatory;
+          const trainingHeight =
+            training == null ? 0 : (training / scaleMax) * plotHeight;
+          const matchHeight =
+            match == null ? 0 : (match / scaleMax) * plotHeight;
+          const compensatoryHeight =
+            compensatory == null ? 0 : (compensatory / scaleMax) * plotHeight;
           const base = top + plotHeight;
           return (
             <g
@@ -3768,7 +3779,12 @@ function LoadView({
       completeness: metric.loadCompleteness,
     }];
   });
-  const knownCurrent = current.filter((item) => item.known);
+  const knownCurrent = current.filter(
+    (
+      item,
+    ): item is (typeof current)[number] & { metric: CompleteLoadMetric } =>
+      hasInterpretableLoad(item.metric),
+  );
   const coverage = summarizeLoadCoverage(
     current.map((item) => item.completeness),
   );
@@ -3807,10 +3823,11 @@ function LoadView({
   };
   const previousMean = teamMeanForWeek(weekId - 1);
   const weekChange = relativeChange(teamMean, previousMean);
-  const sourceTotal =
-    (trainingMean ?? 0) + (matchMean ?? 0) + (compensatoryMean ?? 0);
+  const sourceTotal = [trainingMean, matchMean, compensatoryMean]
+    .filter((value): value is number => value != null)
+    .reduce((total, value) => total + value, 0);
   const sourceShare = (value: number | null) =>
-    sourceTotal > 0 ? ((value ?? 0) / sourceTotal) * 100 : 0;
+    sourceTotal > 0 && value != null ? (value / sourceTotal) * 100 : 0;
   const teamHistory: TeamLoadPoint[] = CALENDAR.slice(
     Math.max(0, weekId - 8),
     weekId,
@@ -3819,7 +3836,7 @@ function LoadView({
       metrics.get(`${calendarWeek.id}-${player.id}`),
     ).filter((metric): metric is PlayerMetric => Boolean(metric));
     const rows = allWeekRows.filter(
-      (metric): metric is PlayerMetric => hasInterpretableLoad(metric),
+      (metric): metric is CompleteLoadMetric => hasInterpretableLoad(metric),
     );
     return {
       label: calendarWeek.label,
@@ -3833,7 +3850,15 @@ function LoadView({
     };
   });
   const sortedPlayers = [...current].sort((a, b) => {
-    if (a.known !== b.known) return a.known ? -1 : 1;
+    const completenessRank: Record<PlayerMetric["loadCompleteness"], number> = {
+      COMPLETE: 0,
+      PARTIAL: 1,
+      NO_EXPOSURE: 2,
+      NO_DATA: 3,
+    };
+    const rankDifference =
+      completenessRank[a.completeness] - completenessRank[b.completeness];
+    if (rankDifference !== 0) return rankDifference;
     if (playerOrder === "high") return b.metric.load - a.metric.load;
     if (playerOrder === "low") return a.metric.load - b.metric.load;
     if (playerOrder === "name")
@@ -3993,8 +4018,8 @@ function LoadView({
               item.completeness,
             );
             const ownTotal = hasRecordedLoad ? item.metric.load : 0;
-            const ownShare = (value: number) =>
-              ownTotal > 0 ? (value / ownTotal) * 100 : 0;
+            const ownShare = (value: number | null) =>
+              ownTotal > 0 && value != null ? (value / ownTotal) * 100 : 0;
             return (
               <button
                 key={item.player.id}
@@ -4103,12 +4128,16 @@ function EvolutionView({
               {(["rpe", "load", "sleep", "fatigue", "pain"] as MetricKey[]).map(
                 (key) => {
                   const trend = trendInfo(history, key);
+                  const value =
+                    key === "load" && !hasInterpretableLoad(current)
+                      ? null
+                      : metricValue(current, key);
                   return (
                     <span className="evo-metric" key={key}>
                       <small>{METRICS[key].label}</small>
                       <b>
                         {display(
-                          metricValue(current, key),
+                          value,
                           key === "load" ? 0 : 1,
                         )}{METRICS[key].unit}
                       </b>
@@ -4263,13 +4292,14 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
   const plotHeight = 198;
   const step = (width - left * 2) / Math.max(visible.length, 1);
   const barWidth = Math.min(34, step * 0.58);
-  const hasData = (item: PlayerMetric) =>
-    item.loadCompleteness !== "NO_DATA" &&
-    !(
-      item.rpeExpected > 0 &&
-      item.rpeCompleted === 0 &&
-      item.matchRpe == null
-    );
+  type ChartableLoadMetric = PlayerMetric & {
+    loadCompleteness: "COMPLETE" | "NO_EXPOSURE";
+    matchLoad: number;
+    compensatoryLoad: number;
+  };
+  const hasData = (item: PlayerMetric): item is ChartableLoadMetric =>
+    item.loadCompleteness === "COMPLETE" ||
+    item.loadCompleteness === "NO_EXPOSURE";
   const maximum = Math.max(
     1,
     ...visible.flatMap((item) => (hasData(item) ? [item.load] : [])),
@@ -4279,8 +4309,8 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
   const labelEvery = Math.max(1, Math.ceil(visible.length / 8));
   const mobileData = visible.slice(-6);
   const active = visible[Math.min(activeIndex, Math.max(0, visible.length - 1))];
-  const widthFor = (value: number) =>
-    `${Math.min(100, Math.max(0, (value / scaleMax) * 100))}%`;
+  const widthFor = (value: number | null) =>
+    `${value == null ? 0 : Math.min(100, Math.max(0, (value / scaleMax) * 100))}%`;
   return (
     <section className="panel player-load-chart">
       <div className="panel-heading">
@@ -4324,11 +4354,15 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
           })}
           {visible.map((item, index) => {
             const x = left + step * index + step / 2;
-            const training = item.trainingLoad + item.compensatoryLoad;
-            const competition = item.matchLoad;
-            const trainingHeight = (training / scaleMax) * plotHeight;
-            const competitionHeight = (competition / scaleMax) * plotHeight;
             const show = hasData(item);
+            const training = show
+              ? item.trainingLoad + item.compensatoryLoad
+              : null;
+            const competition = show ? item.matchLoad : null;
+            const trainingHeight =
+              training == null ? 0 : (training / scaleMax) * plotHeight;
+            const competitionHeight =
+              competition == null ? 0 : (competition / scaleMax) * plotHeight;
             return (
               <g
                 key={item.weekId}
@@ -4366,7 +4400,10 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
                       x={x - barWidth / 2}
                       y={top + plotHeight - trainingHeight - competitionHeight}
                       width={barWidth}
-                      height={Math.max(competitionHeight, competition ? 1 : 0)}
+                      height={Math.max(
+                        competitionHeight,
+                        competition != null && competition > 0 ? 1 : 0,
+                      )}
                       rx="4"
                       className="load-match-bar"
                     />
@@ -4393,25 +4430,35 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
       {active && (
         <div className="chart-selection" aria-live="polite">
           <strong>{CALENDAR[active.weekId - 1].label}</strong>
-          <span>{hasData(active) ? `${compact(active.load)} UA total` : "Sin dato realizado"}</span>
+          <span>
+            {hasData(active)
+              ? `${compact(active.load)} UA total`
+              : active.loadCompleteness === "PARTIAL"
+                ? loadText(active)
+                : "Sin dato realizado"}
+          </span>
           <small>
             {hasData(active)
               ? `Entrenamiento ${compact(active.trainingLoad + active.compensatoryLoad)} · competición ${compact(active.matchLoad)} UA`
-              : "El hueco no se interpreta como cero."}
+              : active.loadCompleteness === "PARTIAL"
+                ? "Suma conocida; faltan componentes del esfuerzo."
+                : "El hueco no se interpreta como cero."}
           </small>
         </div>
       )}
       <div className="player-load-mobile" aria-label="Carga semanal individual en las últimas seis jornadas">
         {mobileData.map((item) => {
           const show = hasData(item);
-          const training = item.trainingLoad + item.compensatoryLoad;
-          const competition = item.matchLoad;
+          const training = show
+            ? item.trainingLoad + item.compensatoryLoad
+            : null;
+          const competition = show ? item.matchLoad : null;
           const weekLabel = CALENDAR[item.weekId - 1].label;
           return (
             <div
               key={item.weekId}
               className={item === mobileData.at(-1) ? "current" : ""}
-              aria-label={`${weekLabel}: ${show ? `${compact(item.load)} UA, entrenamiento ${compact(training)} UA, competición ${compact(competition)} UA` : "sin dato"}`}
+              aria-label={`${weekLabel}: ${show ? `${compact(item.load)} UA, entrenamiento ${compact(training)} UA, competición ${compact(competition)} UA` : item.loadCompleteness === "PARTIAL" ? loadText(item) : "sin dato"}`}
             >
               <span className="player-load-mobile-week">{weekLabel}</span>
               <span className="player-load-mobile-track">
@@ -4425,7 +4472,13 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
                 )}
               </span>
               <span className="player-load-mobile-value">
-                <strong>{show ? compact(item.load) : "—"}</strong>
+                <strong>
+                  {show
+                    ? compact(item.load)
+                    : item.loadCompleteness === "PARTIAL"
+                      ? "Parcial"
+                      : "—"}
+                </strong>
               </span>
             </div>
           );
@@ -4434,7 +4487,7 @@ function PlayerLoadChart({ history }: { history: PlayerMetric[] }) {
       <div className="performance-chart-legend">
         <span><i className="training" /> Entrenamiento</span>
         <span><i className="match" /> Competición</span>
-        <small>Los huecos representan semanas sin dato.</small>
+        <small>Los huecos representan semanas parciales o sin dato.</small>
       </div>
     </section>
   );
@@ -4643,7 +4696,8 @@ function PlayerDetail({
   const current = metrics.get(`${weekId}-${player.id}`);
   if (!current)
     return <p className="empty-state">No hay datos del jugador.</p>;
-  const currentLoadKnown = current.loadCompleteness === "COMPLETE";
+  const currentCompleteLoad = hasInterpretableLoad(current) ? current : null;
+  const currentLoadKnown = currentCompleteLoad != null;
   const history = CALENDAR.slice(0, weekId)
     .map((week) => metrics.get(`${week.id}-${playerId}`))
     .filter((item): item is PlayerMetric => Boolean(item));
@@ -4663,9 +4717,16 @@ function PlayerDetail({
     .filter((item) => item.playerId === playerId)
     .sort((a, b) => a.weekId - b.weekId);
   const currentPain = pains.find((item) => item.weekId === weekId);
+  const previousCompleteLoad = hasInterpretableLoad(previous)
+    ? previous
+    : null;
   const loadChange =
-    currentLoadKnown && hasInterpretableLoad(previous) && previous!.load > 0
-      ? ((current.load - previous!.load) / previous!.load) * 100
+    currentCompleteLoad &&
+    previousCompleteLoad &&
+    previousCompleteLoad.load > 0
+      ? ((currentCompleteLoad.load - previousCompleteLoad.load) /
+          previousCompleteLoad.load) *
+        100
       : null;
   const exposureFor = (weeks: number) => {
     const window = history.slice(-weeks);
@@ -4679,11 +4740,15 @@ function PlayerDetail({
     { label: "14 días", ...exposureFor(2) },
     { label: "28 días", ...exposureFor(4) },
   ];
+  const competitionLoadValues = history.map((item) => item.matchLoad);
   const competition = {
     called: knownPlayerMatches.filter((item) => item.convocation !== "NO CONVOCADO").length,
     starts: knownPlayerMatches.filter((item) => item.convocation === "TITULAR").length,
     minutes: knownPlayerMatches.reduce((sum, item) => sum + (item.minutes ?? 0), 0),
-    load: knownPlayerMatches.reduce((sum, item) => sum + (loadForCompleteEffort(item.rpe, item.minutes) ?? 0), 0),
+    load: competitionLoadValues
+      .filter((value): value is number => value != null)
+      .reduce((sum, value) => sum + value, 0),
+    loadComplete: competitionLoadValues.every((value) => value != null),
     rpe: mean(knownPlayerMatches.map((item) => item.rpe)),
   };
   const changeCandidates = [
@@ -4865,12 +4930,31 @@ function PlayerDetail({
             </div>
             <div className="load-source-bar" aria-label="Origen de la carga">
               <i
-                style={{ width: `${current.load ? ((current.trainingLoad + current.compensatoryLoad) / current.load) * 100 : 0}%` }}
+                style={{
+                  width: `${
+                    currentCompleteLoad && currentCompleteLoad.load > 0
+                      ? ((currentCompleteLoad.trainingLoad +
+                          currentCompleteLoad.compensatoryLoad) /
+                          currentCompleteLoad.load) *
+                        100
+                      : 0
+                  }%`,
+                }}
               />
-              <b style={{ width: `${current.load ? (current.matchLoad / current.load) * 100 : 0}%` }} />
+              <b
+                style={{
+                  width: `${
+                    currentCompleteLoad && currentCompleteLoad.load > 0
+                      ? (currentCompleteLoad.matchLoad /
+                          currentCompleteLoad.load) *
+                        100
+                      : 0
+                  }%`,
+                }}
+              />
             </div>
             <div className="overview-load-facts">
-              <span><small>Entrenamiento</small><strong>{compact(current.trainingLoad + current.compensatoryLoad)} UA</strong></span>
+              <span><small>Entrenamiento</small><strong>{compact(currentCompleteLoad == null ? null : currentCompleteLoad.trainingLoad + currentCompleteLoad.compensatoryLoad)} UA</strong></span>
               <span><small>Competición</small><strong>{compact(current.matchLoad)} UA</strong></span>
               <span><small>Semana anterior</small><strong>{compact(previous?.load ?? null)} UA</strong></span>
             </div>
@@ -4956,7 +5040,7 @@ function PlayerDetail({
             </div>
             <dl>
               <div><dt>Anterior</dt><dd>{compact(previous?.load ?? null)} UA</dd></div>
-              <div><dt>Entrenamiento</dt><dd>{compact(current.trainingLoad + current.compensatoryLoad)} UA</dd></div>
+              <div><dt>Entrenamiento</dt><dd>{compact(currentCompleteLoad == null ? null : currentCompleteLoad.trainingLoad + currentCompleteLoad.compensatoryLoad)} UA</dd></div>
               <div><dt>Competición</dt><dd>{compact(current.matchLoad)} UA</dd></div>
               <div><dt>Z-RPE personal</dt><dd>{current.zRpe == null ? "—" : display(current.zRpe, 2)}</dd></div>
             </dl>
@@ -4988,7 +5072,7 @@ function PlayerDetail({
 
           <section className="panel competition-context-v7">
             <div><span className="eyebrow">Competición · temporada</span><h2>{competition.minutes} minutos</h2><p>{competition.called} convocatorias · {competition.starts} titularidades</p></div>
-            <dl><div><dt>RPE medio partido</dt><dd>{display(competition.rpe)}/10</dd></div><div><dt>Carga competición</dt><dd>{compact(competition.load)} UA</dd></div></dl>
+            <dl><div><dt>RPE medio partido</dt><dd>{display(competition.rpe)}/10</dd></div><div><dt>Carga competición</dt><dd>{compact(competition.load)} UA{competition.loadComplete ? "" : " · parcial"}</dd></div></dl>
             <div className="competition-minutes-spark">
               <CompetitionMinutesHistory matches={knownPlayerMatches} />
             </div>
@@ -5279,7 +5363,15 @@ function ReportsView({
             <div>
               <small>Carga media reciente</small>
               <strong>
-                {compact(mean(current.map((item) => item.metric.load)))} UA
+                {compact(
+                  mean(
+                    current.map((item) =>
+                      hasInterpretableLoad(item.metric)
+                        ? item.metric.load
+                        : null,
+                    ),
+                  ),
+                )} UA
               </strong>
             </div>
             <div>
@@ -5362,19 +5454,28 @@ function ReportsView({
               <h2>Principales tendencias</h2>
               {(["rpe", "load", "sleep", "fatigue"] as MetricKey[]).map(
                 (key) => {
-                  const teamHistory = CALENDAR.slice(0, weekId).map(
-                    (week) =>
-                      ({
-                        ...current[0].metric,
-                        weekId: week.id,
-                        [key]: mean(
-                          players.map((item) => {
-                            const metric = metrics.get(`${week.id}-${item.id}`);
-                            return metric ? metricValue(metric, key) : null;
-                          }),
-                        ),
-                      }) as PlayerMetric,
-                  );
+                  const teamHistory = CALENDAR.slice(0, weekId).map((week) => {
+                    const value = mean(
+                      players.map((item) => {
+                        const metric = metrics.get(`${week.id}-${item.id}`);
+                        if (!metric) return null;
+                        if (key === "load" && !hasInterpretableLoad(metric))
+                          return null;
+                        return metricValue(metric, key);
+                      }),
+                    );
+                    return {
+                      ...current[0].metric,
+                      weekId: week.id,
+                      [key]: value,
+                      ...(key === "load"
+                        ? {
+                            loadCompleteness:
+                              value == null ? "NO_DATA" : "COMPLETE",
+                          }
+                        : {}),
+                    } as PlayerMetric;
+                  });
                   const trend = trendInfo(teamHistory, key);
                   return (
                     <p key={key}>

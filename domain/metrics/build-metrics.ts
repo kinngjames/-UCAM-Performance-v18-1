@@ -125,9 +125,15 @@ export function buildMetrics({
             match?.compensatoryMinutes,
           )
         : null;
-      const matchLoad = matchLoadValue ?? 0;
-      const compensatoryLoad = compensatoryLoadValue ?? 0;
-      const totalLoad = trainingLoad + matchLoad + compensatoryLoad;
+      const matchLoad = matchExpected ? matchLoadValue : 0;
+      const compensatoryLoad = compensatoryExpected
+        ? compensatoryLoadValue
+        : 0;
+      // Contrato C13: el total conserva solo componentes conocidos; los
+      // componentes ausentes permanecen null y loadCompleteness advierte que
+      // la suma no está completa.
+      const knownTotal =
+        trainingLoad + (matchLoad ?? 0) + (compensatoryLoad ?? 0);
       const expectedLoadEfforts =
         trained.length + Number(matchExpected) + Number(compensatoryExpected);
       const completedLoadEfforts =
@@ -202,7 +208,7 @@ export function buildMetrics({
         trainingLoad,
         matchLoad,
         compensatoryLoad,
-        load: totalLoad,
+        load: knownTotal,
         trainingMinutes:
           loadRows.reduce((sum, item) => sum + (item.minutes ?? 0), 0) +
           (matchKnown ? (match?.compensatoryMinutes ?? 0) : 0),

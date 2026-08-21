@@ -18,6 +18,22 @@ test("fixture v3 fija guardas nulas, configuración y esfuerzos incompletos", as
   for (const id of ["M1", "M2", "M3", "M4"])
     assert.equal(byCase.get(id).loadCompleteness, "PARTIAL");
   assert.deepEqual(
+    [byCase.get("M1").matchLoad, byCase.get("M2").matchLoad],
+    [null, null],
+  );
+  assert.deepEqual(
+    [
+      byCase.get("M3").compensatoryLoad,
+      byCase.get("M4").compensatoryLoad,
+    ],
+    [null, null],
+  );
+  assert.ok(
+    ["M1", "M2", "M3", "M4"].every(
+      (id) => byCase.get(id).load === 300,
+    ),
+  );
+  assert.deepEqual(
     [
       byCase.get("M3").expectedLoadEfforts,
       byCase.get("M3").completedLoadEfforts,
